@@ -72,12 +72,13 @@ int main(void) {
     lights[2].colour = glm::vec3(0, 0, 1);
 
     DirectionalLight dirlight;
-    dirlight.direction = glm::vec3(0, -1, 0);
+    dirlight.direction = glm::vec3(0.1, -1, 0.2);
 
 
     // models? yea
     Model teapot("resources/models/myTeapot/teapot.obj");
     Model lightBall("resources/models/lightball/ball.obj");
+    Model dumpster("resources/models/dumpster/dump.obj");
 
     glEnable(GL_CULL_FACE);
     //glCullFace(GL_FRONT);
@@ -129,7 +130,7 @@ int main(void) {
         defaultShader.SetFloat("iTime", glfwGetTime());
         // updating world matrix, and even more uniforms!
         world = glm::mat4(1.0f);
-        world = glm::scale(world, glm::vec3(0.3));
+        world = glm::rotate(world, glm::radians(90.0f), glm::vec3(0, 1, 0));
         world = glm::translate(world, glm::vec3(0, -0.5, 0));
         defaultShader.SetMat4("world", world);
 
@@ -145,7 +146,7 @@ int main(void) {
         defaultShader.SetVec3("dirlight.direction", dirlight.direction);
         defaultShader.SetVec3("dirlight.colour", dirlight.colour);
 
-        teapot.Draw(defaultShader); // awwww yeaa
+        dumpster.Draw(defaultShader); // awwww yeaa
 
 
 
