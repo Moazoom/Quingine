@@ -3,7 +3,7 @@
       {
         "type": "cppbuild",
         "label": "use this one idiot (local)",
-        "command": "C:/raylib/w64devkit/bin/g++.exe",
+        "command": "F:/Mingw64/bin/g++.exe",
         "args": [
           "${file}",
           "-o",
@@ -16,7 +16,7 @@
           "-lglfw3",
           "-lgdi32",
           "-lopengl32",
-          "-lassimp.dll"
+          "-lassimp.dll",
         ],
         "options": {
           "cwd": "${fileDirname}"
@@ -28,7 +28,7 @@
           "kind": "build",
           "isDefault": true
         },
-        "detail": "compiler: C:/raylib/w64devkit/bin/g++.exe"
+        "detail": "compiler: F:/Mingw64/bin/g++.exe"
       }
     ],
     "version": "2.0.0"
