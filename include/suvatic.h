@@ -19,10 +19,6 @@ helpful vid: https://www.youtube.com/watch?v=ajv46BSqcK4
 #include "glm/glm.hpp" // aw yea its maths time!!
 
 
-// SUPPORT FUNCTION
-// take al points ( as vectors in model space!), find dot products of them and our target direction
-// largest dot product is farthest away :)
-
 // aka support function
 glm::vec2 findFarthestPoint(glm::vec2 targetDir, glm::vec2* vertices, int nVertices){
     float temp;
@@ -30,20 +26,15 @@ glm::vec2 findFarthestPoint(glm::vec2 targetDir, glm::vec2* vertices, int nVerti
     glm::vec2 farthest;
     // loops through verticies
     for(int i = 0; i < nVertices; i++){
-        temp = glm::dot(targetDir, *vertices); // stores the dot product
+        temp = glm::dot(glm::normalize(targetDir), *vertices); // stores the dot product
         if(biggest < temp){ // checks if this point is farther, and sets accordingly
             biggest = temp;
             farthest = *vertices;
         }
+        vertices++;
     }
     return farthest; // neat
 }
-
-
-
-// SANITY CHECK BEYOND ORIGIN
-// do a dot product between our direction & furthest point coorrds as a vector from origin (normalised)
-// if dot product > 0, angle between vectors is < 90 therefore it is beyond the origin
 
 // deduces if a point is beyond the origin, using a direction vector
 bool checkIfBeyondOrigin(glm::vec2 targetDir, glm::vec2 point){
@@ -53,28 +44,85 @@ bool checkIfBeyondOrigin(glm::vec2 targetDir, glm::vec2 point){
     else return false;
 }
 
-
-
-
-// VECTOR TRIPLE PRODUCT ie finding next dir for triangle
-// also used above
+// return perpendicular normal to iline1 
+//(IN CROSS PRODUCT POSITION MATTERS remember right had rule
+// in this function, if you want a positive, iline 1 should be "clockwise" to iline 2
+glm::vec2 tripleProduct(glm::vec2 iLine1, glm::vec2 iLine2){
+    // extending into 3d
+    glm::vec3 line1 = glm::vec3(iLine1, 0);
+    glm::vec3 line2 = glm::vec3(iLine2, 0);
+    // first cross product
+    glm::vec3 outward = glm::cross(line1, line2);
+    // second cross product
+    glm::vec3 normal = glm::cross(outward, line1);
+    return glm::normalize(glm::vec2(normal.x, normal.y));
+}
 
 // finds normal direction on line AB towards origin
+// if AB is "anticlockwise" to AO, triple product will still point in the correct direction!
 glm::vec2 findNormalToOrigin(glm::vec2 A, glm::vec2 B){
-    // converting points to 3D
-    glm::vec3 nA = glm::vec3(A.x, A.y, 0);
-    glm::vec3 nB = glm::vec3(B.x, B.y, 0);
+    // find triple product between AB and A to origin
+    glm::vec2 normal = tripleProduct(B - A, -A);
 
-    // find cross product between AB and A to origin
-    glm::vec3 outward = glm::cross(nB - nA, glm::vec3(0) - nA);
-    
-    // cross product of "outward" vector to find perpendicular vector to origin!
-    glm::vec3 originDir = glm::cross(nB - nA, outward);
-    return originDir;
+    return glm::normalize(normal);
+}
+
+// A is newest point ( this is where the magic happens!)
+// return an int pointer; 1 if AB, 2 if AC, 0 if intersection
+glm::vec2 checkTriangle(glm::vec2 A, glm::vec2 B, glm::vec2 C){
+    // first check AB region
+    glm::vec2 ABnormal = findNormalToOrigin(A, B);
+    // if dot product is bigger than 0, origin is in AB
+    if(glm::dot(ABnormal, glm::normalize(-A)) > 0.0f){
+        return ABnormal;
+    }
+
+    // now check AC region
+    glm::vec2 ACnormal = findNormalToOrigin(A, C);
+    // we know how it iz
+    if(glm::dot(ACnormal, glm::normalize(-A)) > 0.0f){
+        return ACnormal;
+    }
+
+    // and finally, if both checks failed, then there is a intersection!
+    return glm::vec2(0);
 }
 
 
-// CHECKING IF SIMPLEX DIFFERENCE TRIANGLE HAS ORIGIN
-// need to check 2 regions, again check the vid its helpful
-// lots of dot product shi ill leave this for later
-// if checks for only 2 possible outside regions fail, origin is within triangle!
+// our main big boy, determines intersection between two sets of verticies, nice
+bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, int nV2){
+    glm::vec2 targetDir;
+    glm::vec2 A, B, C, temp; // our blyatful triangle
+    int region; // for triangle checking
+
+    // first, find a direction
+    targetDir = glm::vec2(0, 1);
+
+    // getting first 3 points
+    C = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+    targetDir = -C; // towards origin
+
+    B = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+    if(!checkIfBeyondOrigin(targetDir, B)) return false; // if B isnt beyond origin, shapes arent intersecting
+    targetDir = findNormalToOrigin(C, B); // find our next direction
+
+    A = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+    if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
+
+    // main loop basically find new direction, discard a point, find a new one and try again
+    targetDir = checkTriangle(A, B, C);
+    while(targetDir != glm::vec2(0)){
+        // getting rid of C
+        C = B;
+        B = A;
+
+        // recasting A
+        A = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+        if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
+
+        // retrying new triangle
+        targetDir = checkTriangle(A, B, C);
+    }
+
+    return true; // if all other checks fail
+}
