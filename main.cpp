@@ -19,7 +19,7 @@ float boxVertices[]{
     -1, -1, 0
 };
 
-float boxIndices[]{
+int boxIndices[]{
     0, 2, 1,
     0, 3, 2
 };
@@ -39,7 +39,7 @@ float trigVertices[]{
     1, -1, 0,
 };
 
-float trigIndices[]{
+int trigIndices[]{
     0, 2, 1,
 };
 
@@ -63,7 +63,19 @@ int main(void) {
     GLFWwindow* window = GetWindow();
     if (window == NULL) return -1;
 
+    // shaders
+    Shader myShader("shaders/2d.vert", "shaders/2d.frag");
 
+
+    // buffers
+    VAO boxVAO;
+    EBO boxEBO(boxIndices, sizeof(boxIndices));
+    VBO boxVBO(boxVertices, sizeof(boxVertices));
+    boxVAO.Bind();
+    boxVAO.LinkVBO(boxVBO, 0, 3, 3, 0);
+    boxEBO.Bind();
+    boxVAO.Unbind();
+    boxEBO.Unbind();
     // VV render loop i think VV
     while (!glfwWindowShouldClose(window))
     {
@@ -82,7 +94,12 @@ int main(void) {
         glClear(GL_COLOR_BUFFER_BIT); // clearing background
 
         // resetting matricies
-        glm::mat4 world = glm::mat4(1.0f); // aka model matrix
+        //glm::mat4 world = glm::mat4(1.0f); // aka model matrix
+
+        myShader.Use();
+        boxVAO.Bind();
+        //boxEBO.Bind();
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
         //re🅱️resh
