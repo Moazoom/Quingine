@@ -9,6 +9,7 @@
 #include "cubemap.h"
 #include "suvatic.h"
 #include "glm/gtx/rotate_vector.hpp"
+#include "glm/gtx/matrix_transform_2d.hpp"
 
 int WINW = 1280;
 int WINH = 720;
@@ -160,9 +161,15 @@ int main(void) {
 
         world = glm::rotate(world, glm::radians(trigRot), glm::vec3(0, 0, 1));
 
+        glm::mat3 trigTransform(1.0f);
+        trigTransform = glm::translate(trigTransform, glm::vec2(trigPos));
+        trigTransform = glm::rotate(trigTransform, glm::radians(trigRot));
+        glm::vec3 temp;
+
         for(int i = 0; i < 3; i++){
-            trigColliders[i] = glm::mat2(world) * trigBase[i];
-            std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
+            temp = trigTransform * glm::vec3(trigBase[i], 1);
+            trigColliders[i] = glm::vec2(temp.x, temp.y);
+            //std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
         }
 
         myShader.SetMat4("world", world);
