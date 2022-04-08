@@ -150,6 +150,6 @@ bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, i
         targetDir = checkTriangle(A, B, C, &region);
     }
 
-    //std::cout << num << std::endl;
+    std::cout << num << "--";
     return true; // if all other checks fail
 }

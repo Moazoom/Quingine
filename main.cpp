@@ -19,26 +19,30 @@ float boxVertices[]{
     -1, 1, 0,
     1, 1, 0,
     1, -1, 0,
-    -1, -1, 0
+    -1, -1, 0,
+    -2, 0, 0
 };
 
 int boxIndices[]{
     0, 2, 1,
-    0, 3, 2
+    0, 3, 2,
+    0, 3, 4
 };
 
 glm::vec2 boxBase[]{
     glm::vec2(-1, 1),
     glm::vec2(1, 1),
     glm::vec2(1, -1),
-    glm::vec2(-1, -1)
+    glm::vec2(-1, -1),
+    glm::vec2(-2, 0)
 };
 
 glm::vec2 boxColliders[]{
     glm::vec2(-1, 1),
     glm::vec2(1, 1),
     glm::vec2(1, -1),
-    glm::vec2(-1, -1)
+    glm::vec2(-1, -1),
+    glm::vec2(-2, 0)
 };
 
 glm::vec2 boxPos(3);
@@ -121,12 +125,12 @@ int main(void) {
         trigRot += 45 * deltaTime;
 
         // updating box colliders
-        for(int i = 0; i < 4; i++){
+        for(int i = 0; i < 5; i++){
             boxColliders[i] = boxBase[i] + boxPos;
             //std::cout << boxColliders[i].x << " , " << boxColliders[i].y << std::endl;
         }
 
-        bool hasCollided = checkForIntersection(&boxColliders[0], 4, &trigColliders[0], 3);
+        bool hasCollided = checkForIntersection(&boxColliders[0], 5, &trigColliders[0], 3);
 
 
         //ren🅱️ering
@@ -152,7 +156,7 @@ int main(void) {
             myShader.SetVec3("colour", glm::vec3(0, 1, 1));
         }
         boxVAO.Bind();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
 
         // resetting matricies
