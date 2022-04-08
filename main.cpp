@@ -7,9 +7,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "buffers.h"
 #include "cubemap.h"
+#include "suvatic.h"
 
-int WINW = 720;
-int WINH = 480;
+int WINW = 1280;
+int WINH = 720;
 
 // a box
 float boxVertices[]{
@@ -24,12 +25,21 @@ int boxIndices[]{
     0, 3, 2
 };
 
+glm::vec2 boxBase[]{
+    glm::vec2(-1, 1),
+    glm::vec2(1, 1),
+    glm::vec2(1, -1),
+    glm::vec2(-1, -1)
+};
+
 glm::vec2 boxColliders[]{
     glm::vec2(-1, 1),
     glm::vec2(1, 1),
     glm::vec2(1, -1),
     glm::vec2(-1, -1)
 };
+
+glm::vec2 boxPos(1, 2);
 
 
 // a triangle?
@@ -43,11 +53,20 @@ int trigIndices[]{
     0, 2, 1,
 };
 
+glm::vec2 trigBase[]{
+    glm::vec2(-1, 1),
+    glm::vec2(1, 1),
+    glm::vec2(1, -1),
+};
+
 glm::vec2 trigColliders[]{
     glm::vec2(-1, 1),
     glm::vec2(1, 1),
     glm::vec2(1, -1),
 };
+
+glm::vec2 trigPos(2, 1);
+float trigRot = 0.0f;
 
 //prototypes suii
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -66,7 +85,6 @@ int main(void) {
     // shaders
     Shader myShader("shaders/2d.vert", "shaders/2d.frag");
 
-
     // buffers
     VAO boxVAO;
     EBO boxEBO(boxIndices, sizeof(boxIndices));
@@ -76,6 +94,16 @@ int main(void) {
     boxEBO.Bind();
     boxVAO.Unbind();
     boxEBO.Unbind();
+
+    VAO trigVAO;
+    EBO trigEBO(trigIndices, sizeof(trigIndices));
+    VBO trigVBO(trigVertices, sizeof(trigVertices));
+    trigVAO.Bind();
+    trigVAO.LinkVBO(trigVBO, 0, 3, 3, 0);
+    trigEBO.Bind();
+    trigVAO.Unbind();
+    trigEBO.Unbind();
+
     // VV render loop i think VV
     while (!glfwWindowShouldClose(window))
     {
@@ -88,24 +116,72 @@ int main(void) {
         processInput(window); // gets input
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
+        // updating box colliders
+        for(int i = 0; i < 4; i++){
+            boxColliders[i] = boxBase[i] + boxPos;
+            //std::cout << boxColliders[i].x << " , " << boxColliders[i].y << std::endl;
+        }
+        for(int i = 0; i < 3; i++){
+            trigColliders[i] = trigBase[i] + trigPos;
+            //std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
+        }
+
+        bool hasCollided = checkForIntersection(&boxColliders[0], 4, &trigColliders[0], 3);
+
 
         //ren🅱️ering
         glClearColor(0.1, 0.1, 0.1, 1); // grey background
         glClear(GL_COLOR_BUFFER_BIT); // clearing background
 
         // resetting matricies
-        //glm::mat4 world = glm::mat4(1.0f); // aka model matrix
+        glm::mat4 world = glm::mat4(1.0f); // update position in this
+        world = glm::translate(world, glm::vec3(boxPos, 0));
+
+        glm::mat4 projection = glm::mat4(1.0f);
+        projection = glm::ortho(-(float)WINW / 100.0f, (float)WINW / 100.0f, -(float)WINH / 100.0f, (float)WINH / 100.0f, -1.0f, 1.0f);
 
         myShader.Use();
+
+        myShader.SetMat4("world", world);
+        myShader.SetMat4("projection", projection);
+
+        if(hasCollided){
+            myShader.SetVec3("colour", glm::vec3(1, 0, 0));
+        }
+        else{
+            myShader.SetVec3("colour", glm::vec3(0, 1, 1));
+        }
         boxVAO.Bind();
-        //boxEBO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+        // resetting matricies
+        world = glm::mat4(1.0f); // update position in this
+        world = glm::translate(world, glm::vec3(trigPos, 0));
+
+        //trigRot += 45 * deltaTime;
+
+        world = glm::rotate(world, glm::radians(trigRot), glm::vec3(0, 0, 1));
+
+        myShader.SetMat4("world", world);
+        myShader.SetMat4("projection", projection);
+
+        // collision!
+        
+        if(hasCollided){
+            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
+        }
+        else{
+            myShader.SetVec3("colour", glm::vec3(1, 1, 0));
+        }
+        trigVAO.Bind();
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
 
         //re🅱️resh
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }
+    };
 
     //deinit
     glfwTerminate();
@@ -162,4 +238,13 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe mode
 
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) boxPos.y += (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) boxPos.x -= (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) boxPos.y -= (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) boxPos.x += (float)(5 * deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) trigPos.y += (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) trigPos.x -= (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) trigPos.y -= (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) trigPos.x += (float)(5 * deltaTime);
 }
