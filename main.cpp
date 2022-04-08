@@ -8,6 +8,7 @@
 #include "buffers.h"
 #include "cubemap.h"
 #include "suvatic.h"
+#include "glm/gtx/rotate_vector.hpp"
 
 int WINW = 1280;
 int WINH = 720;
@@ -39,7 +40,7 @@ glm::vec2 boxColliders[]{
     glm::vec2(-1, -1)
 };
 
-glm::vec2 boxPos(1, 2);
+glm::vec2 boxPos(3);
 
 
 // a triangle?
@@ -54,9 +55,9 @@ int trigIndices[]{
 };
 
 glm::vec2 trigBase[]{
-    glm::vec2(-1, 1),
-    glm::vec2(1, 1),
-    glm::vec2(1, -1),
+    glm::vec2(-1.0f, 1.0f),
+    glm::vec2(1.0f, 1.0f),
+    glm::vec2(1.0f, -1.0f),
 };
 
 glm::vec2 trigColliders[]{
@@ -65,7 +66,7 @@ glm::vec2 trigColliders[]{
     glm::vec2(1, -1),
 };
 
-glm::vec2 trigPos(2, 1);
+glm::vec2 trigPos(0.0f);
 float trigRot = 0.0f;
 
 //prototypes suii
@@ -116,14 +117,12 @@ int main(void) {
         processInput(window); // gets input
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
+        trigRot += 45 * deltaTime;
+
         // updating box colliders
         for(int i = 0; i < 4; i++){
             boxColliders[i] = boxBase[i] + boxPos;
             //std::cout << boxColliders[i].x << " , " << boxColliders[i].y << std::endl;
-        }
-        for(int i = 0; i < 3; i++){
-            trigColliders[i] = trigBase[i] + trigPos;
-            //std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
         }
 
         bool hasCollided = checkForIntersection(&boxColliders[0], 4, &trigColliders[0], 3);
@@ -159,9 +158,12 @@ int main(void) {
         world = glm::mat4(1.0f); // update position in this
         world = glm::translate(world, glm::vec3(trigPos, 0));
 
-        //trigRot += 45 * deltaTime;
-
         world = glm::rotate(world, glm::radians(trigRot), glm::vec3(0, 0, 1));
+
+        for(int i = 0; i < 3; i++){
+            trigColliders[i] = glm::mat2(world) * trigBase[i];
+            std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
+        }
 
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
