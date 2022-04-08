@@ -164,11 +164,9 @@ int main(void) {
         glm::mat3 trigTransform(1.0f);
         trigTransform = glm::translate(trigTransform, glm::vec2(trigPos));
         trigTransform = glm::rotate(trigTransform, glm::radians(trigRot));
-        glm::vec3 temp;
 
         for(int i = 0; i < 3; i++){
-            temp = trigTransform * glm::vec3(trigBase[i], 1);
-            trigColliders[i] = glm::vec2(temp.x, temp.y);
+            trigColliders[i] = trigTransform * glm::vec3(trigBase[i], 1);
             //std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
         }
 
