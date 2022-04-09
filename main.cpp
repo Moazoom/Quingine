@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "buffers.h"
 #include "cubemap.h"
-#include "suvatic.h"
+#include "suvatic2D.h"
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/matrix_transform_2d.hpp"
 

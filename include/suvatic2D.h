@@ -5,16 +5,8 @@
 // made by moazoom aw yea#
 // lets start with 2d
 
-/* STEPS:
-1. pick random direction, find extreme support points and minskowsky difference
-2. point towards origin, find two more points & difference
-3. point towared line normal closest to origin, find points and diff
-4. check triangle:
-    if origin is within trianclge, return true
-    if it isnt find where origin is continue 3 & 4. if you cant, retunrn false
+// helpful vid: https://www.youtube.com/watch?v=ajv46BSqcK4
 
-helpful vid: https://www.youtube.com/watch?v=ajv46BSqcK4
-*/
 
 #include "glm/glm.hpp" // aw yea its maths time!!
 #include <iostream>
@@ -32,10 +24,8 @@ glm::vec2 findFarthestPoint(glm::vec2 targetDir, glm::vec2* vertices, int nVerti
             biggest = temp;
             farthest = *vertices;
         }
-        vertices++;
+        vertices++; // next vertex
     }
-
-    //std::cout << " darthest point: " << farthest.x << " , " << farthest.y << std::endl;
 
     return farthest; // neat
 }
@@ -48,47 +38,31 @@ bool checkIfBeyondOrigin(glm::vec2 targetDir, glm::vec2 point){
     else return false;
 }
 
-// return perpendicular normal to iline1 
-//(IN CROSS PRODUCT POSITION MATTERS remember right had rule
-// in this function, if you want a positive, iline 1 should be "clockwise" to iline 2
-glm::vec2 tripleProduct(glm::vec2 iLine1, glm::vec2 iLine2){
+// finds normal direction on line AB towards origin
+glm::vec2 findNormalToOrigin(glm::vec2 A, glm::vec2 B){
     // extending into 3d
-    glm::vec3 line1 = glm::vec3(iLine1, 0);
-    glm::vec3 line2 = glm::vec3(iLine2, 0);
-
-    // first cross product
+    glm::vec3 line1 = glm::vec3(B-A, 0);
+    glm::vec3 line2 = glm::vec3(-A, 0);
+    // offsetting a small amount incase the two vectors line up perfectly (rare)
     if(glm::abs(glm::normalize(line1)) == glm::abs(glm::normalize(line2))){
         line1.x += 0.0001;
         line1.y += 0.0001;
     }
+    // triple product
+    glm::vec3 normal = glm::cross(glm::cross(line1, line2), line1);
 
-    glm::vec3 outward = glm::cross(line1, line2);
-    // second cross product
-    glm::vec3 normal = glm::cross(outward, line1);
-    return glm::normalize(glm::vec2(normal.x, normal.y));
+    return glm::vec2(normal);
 }
 
-// finds normal direction on line AB towards origin
-// if AB is "anticlockwise" to AO, triple product will still point in the correct direction!
-glm::vec2 findNormalToOrigin(glm::vec2 A, glm::vec2 B){
-    // find triple product between AB and A to origin
-    glm::vec2 normal = tripleProduct(B - A, -A);
-
-    return glm::normalize(normal);
-}
-
-// A is newest point ( this is where the magic happens!)
 // return an int pointer; 1 if AB, 2 if AC, 0 if intersection
 glm::vec2 checkTriangle(glm::vec2 A, glm::vec2 B, glm::vec2 C, int* region){
     // first check AB region  (ACXAB)XAB
     glm::vec2 ABnormal = glm::cross(glm::cross(glm::vec3(C.x-A.x, C.y-A.y, 0), glm::vec3(B.x-A.x, B.y-A.y, 0)), glm::vec3(B.x-A.x, B.y-A.y, 0));
-    //std::cout << "deez" << std::endl;
     // if dot product is bigger than 0, origin is in AB
     if(glm::dot(ABnormal, glm::normalize(-A)) > 0.0f){
         *region = 1;
         return ABnormal;
     }
-
     // now check AC region (ABXAC)XAC
     glm::vec2 ACnormal = glm::cross(glm::cross(glm::vec3(B.x-A.x, B.y-A.y, 0), glm::vec3(C.x-A.x, C.y-A.y, 0)), glm::vec3(C.x-A.x, C.y-A.y, 0));;
     // we know how it iz
@@ -96,7 +70,6 @@ glm::vec2 checkTriangle(glm::vec2 A, glm::vec2 B, glm::vec2 C, int* region){
         *region = 2;
         return ACnormal;
     }
-
     // and finally, if both checks failed, then there is a intersection!
     *region = 0;
     return glm::vec2(0);
@@ -125,7 +98,7 @@ bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, i
     // main loop basically find new direction, discard a point, find a new one and try again
     targetDir = checkTriangle(A, B, C, &region);
     num = 0;
-
+    // function checkTriangle returns (0, 0) if there is an intersection
     while(targetDir != glm::vec2(0.0f)){
         num++;
 
@@ -150,6 +123,6 @@ bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, i
         targetDir = checkTriangle(A, B, C, &region);
     }
 
-    std::cout << num << "--";
+    //std::cout << num << "--";
     return true; // if all other checks fail
 }
