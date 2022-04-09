@@ -8,8 +8,8 @@
 #include "buffers.h"
 #include "cubemap.h"
 
-int WINW = 720;
-int WINH = 480;
+int WINW = 1280;
+int WINH = 720;
 
 
 
