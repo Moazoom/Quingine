@@ -29,22 +29,6 @@ int boxIndices[]{
     0, 3, 4
 };
 
-glm::vec2 boxBase[]{
-    glm::vec2(-1, 1),
-    glm::vec2(1, 1),
-    glm::vec2(1, -1),
-    glm::vec2(-1, -1),
-    glm::vec2(-2, 0)
-};
-
-glm::vec2 boxColliders[]{
-    glm::vec2(-1, 1),
-    glm::vec2(1, 1),
-    glm::vec2(1, -1),
-    glm::vec2(-1, -1),
-    glm::vec2(-2, 0)
-};
-
 glm::vec2 boxPos(3);
 
 
@@ -57,18 +41,6 @@ float trigVertices[]{
 
 int trigIndices[]{
     0, 2, 1,
-};
-
-glm::vec2 trigBase[]{
-    glm::vec2(-1.0f, 1.0f),
-    glm::vec2(1.0f, 1.0f),
-    glm::vec2(1.0f, -1.0f),
-};
-
-glm::vec2 trigColliders[]{
-    glm::vec2(-1, 1),
-    glm::vec2(1, 1),
-    glm::vec2(1, -1),
 };
 
 glm::vec2 trigPos(0.0f);
@@ -124,13 +96,7 @@ int main(void) {
 
         trigRot += 45 * deltaTime;
 
-        // updating box colliders
-        for(int i = 0; i < 5; i++){
-            boxColliders[i] = boxBase[i] + boxPos;
-            //std::cout << boxColliders[i].x << " , " << boxColliders[i].y << std::endl;
-        }
-
-        bool hasCollided = checkForIntersection(&boxColliders[0], 5, &trigColliders[0], 3);
+        bool hasCollided = checkForIntersection(&boxVertices[0], 5, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot);
 
 
         //ren🅱️ering
@@ -165,20 +131,10 @@ int main(void) {
 
         world = glm::rotate(world, glm::radians(trigRot), glm::vec3(0, 0, 1));
 
-        glm::mat3 trigTransform(1.0f);
-        trigTransform = glm::translate(trigTransform, glm::vec2(trigPos));
-        trigTransform = glm::rotate(trigTransform, glm::radians(trigRot));
-
-        for(int i = 0; i < 3; i++){
-            trigColliders[i] = trigTransform * glm::vec3(trigBase[i], 1);
-            //std::cout << trigColliders[i].x << " , " << trigColliders[i].y << std::endl;
-        }
-
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
 
         // collision!
-        
         if(hasCollided){
             myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
@@ -187,7 +143,6 @@ int main(void) {
         }
         trigVAO.Bind();
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
-
 
         //re🅱️resh
         glfwSwapBuffers(window);

@@ -9,8 +9,36 @@
 
 
 #include "glm/glm.hpp" // aw yea its maths time!!
+//#include "glm/gtx/rotate_vector.hpp"
+#include "glm/gtx/matrix_transform_2d.hpp"
 #include <iostream>
 
+
+// utility function for generating "hitboxes" vector arrays from float arrays, expects 2 same sized arrays
+int fillVecArray(float* floatArray, glm::vec2* vecArray, int size){
+    // for each set of 3 floats, theres 1 vec
+    for(int i = 0; i < size; i++){
+        (*vecArray).x = *floatArray;
+        floatArray++;
+        (*vecArray).y = *floatArray;
+        floatArray++; floatArray++; // skip z, back to x 
+        vecArray++; // next vector
+    }
+    return 0;
+}
+
+// utility func for translating the colliders using a matrix, the inputted colliders should be the "base" colliders
+int translateColliders(glm::vec2* Colliders, int size, glm::vec2 position, float rotation){
+    glm::mat3 transform = glm::mat3(1.0f);
+    transform = glm::translate(transform, position); // translation
+    transform = glm::rotate(transform, glm::radians(rotation)); // rotation
+    // apply matrix tranform to each element in a loop
+    for(int i = 0; i < size; i++){
+        *Colliders = transform * glm::vec3(*Colliders, 1);
+        Colliders++;
+    }
+    return 0;
+}
 
 // aka support function
 glm::vec2 findFarthestPoint(glm::vec2 targetDir, glm::vec2* vertices, int nVertices){
@@ -77,7 +105,17 @@ glm::vec2 checkTriangle(glm::vec2 A, glm::vec2 B, glm::vec2 C, int* region){
 
 
 // our main big boy, determines intersection between two sets of verticies, nice
-bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, int nV2){
+bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, float rotation1, float* vertices2, int size2, glm::vec2 position2, float rotation2){
+    // generate vector arrays
+    glm::vec2 colliders1[size1];
+    fillVecArray(vertices1, &colliders1[0], size1);
+    translateColliders(&colliders1[0], size1, position1, rotation1);
+
+    glm::vec2 colliders2[size2];
+    fillVecArray(&vertices2[0], &colliders2[0], size2);
+    translateColliders(&colliders2[0], size2, position2, rotation2);
+
+    // triangle business
     glm::vec2 targetDir;
     glm::vec2 A, B, C; // our blyatful triangle
     int region, num;
@@ -85,14 +123,14 @@ bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, i
     // first, find a direction
     targetDir = glm::vec2(1, 1);
     // getting first 3 points
-    C = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+    C = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
     targetDir = -C; // towards origin
 
-    B = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+    B = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
     targetDir = findNormalToOrigin(C, B); // find our next direction
     if(!checkIfBeyondOrigin(B - C, B)) return false; // if B isnt beyond origin, shapes arent intersecting
 
-    A = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+    A = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
     if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
 
     // main loop basically find new direction, discard a point, find a new one and try again
@@ -115,7 +153,7 @@ bool checkForIntersection(glm::vec2* vertices1, int nV1, glm::vec2* vertices2, i
         }
 
         // recasting A
-        A = findFarthestPoint(targetDir, vertices1, nV1) - findFarthestPoint(-targetDir, vertices2, nV2);
+        A = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
         if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
 
         // retrying new triangle
