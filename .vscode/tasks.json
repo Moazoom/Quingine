@@ -3,7 +3,7 @@
     {
       "type": "cppbuild",
       "label": "use this one idiot (local)",
-      "command": "C:/MinGW/bin/g++.exe",
+      "command": "g++.exe",
       "args": [
         "${file}",
         "-o",
@@ -28,7 +28,7 @@
         "kind": "build",
         "isDefault": true
       },
-      "detail": "compiler: C:/MinGW/bin/g++.exe"
+      "detail": "compiler: C:/raylib/w64devkit/bin/g++.exe"
     }
   ],
   "version": "2.0.0"

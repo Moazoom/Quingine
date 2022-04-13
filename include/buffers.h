@@ -8,10 +8,10 @@ class VBO{
     public:
         GLuint ID;
 
-        VBO(GLfloat* verticies, GLsizeiptr size){
+        VBO(GLfloat* vertices, GLsizeiptr size){
             glGenBuffers(1, &ID);
             glBindBuffer(GL_ARRAY_BUFFER, ID);
-            glBufferData(GL_ARRAY_BUFFER, size, verticies, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
         }
 
         void Bind(){
@@ -30,10 +30,10 @@ class EBO{
     public:
         GLuint ID;
 
-        EBO(GLint* indicies){
+        EBO(GLint* indices, GLsizeiptr size){
             glGenBuffers(1, &ID);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indicies), indicies, GL_STATIC_DRAW);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
         }
 
         void Bind(){
