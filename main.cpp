@@ -11,50 +11,46 @@
 int WINW = 720;
 int WINH = 480;
 
-
-
 //prototypes suii
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
-GLFWwindow* GetWindow(void);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-unsigned int loadTexture(char const* path, int wrapping, int minFilter, int maxFilter);
-
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void processInput(GLFWwindow *window);
+GLFWwindow *GetWindow(void);
+void mouse_callback(GLFWwindow *window, double xpos, double ypos);
+unsigned int loadTexture(char const *path, int wrapping, int minFilter, int maxFilter);
 
 //camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::radians(-90.0), 0);
 
-
 //other
-float deltaTime = 0.0f;	// Time between current frame and last frame
+float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 // this ones are for mouse
 float lastX = WINW / 2.0;
 float lastY = WINH / 2.0;
 
-
-struct PointLight {
+struct PointLight
+{
     glm::vec3 position;
     glm::vec3 colour = glm::vec3(1);
 };
 
-struct DirectionalLight {
+struct DirectionalLight
+{
     glm::vec3 direction;
     glm::vec3 colour = glm::vec3(1);
 };
 
-int main(void) {
+int main(void)
+{
     //init oot of da wae
-    GLFWwindow* window = GetWindow();
-    if (window == NULL) return -1;
-
+    GLFWwindow *window = GetWindow();
+    if (window == NULL)
+        return -1;
 
     glEnable(GL_DEPTH_TEST); // self explanatory
 
-
     glfwSetCursorPosCallback(window, mouse_callback); // mouse function
-
 
     //shaders, thank you shader class :)
     Shader defaultShader("shaders/default.vert", "shaders/default.frag");
@@ -73,7 +69,6 @@ int main(void) {
 
     DirectionalLight dirlight;
     dirlight.direction = glm::vec3(0, -1, 0);
-
 
     // models? yea
     Model teapot("resources/models/myTeapot/teapot.obj");
@@ -97,20 +92,18 @@ int main(void) {
         deltaTime = glfwGetTime() - lastFrame;
         lastFrame = glfwGetTime();
 
-
         //in🅱️ut
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // catches mouse
-        processInput(window); // gets input
-        glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
-
+        processInput(window);                                        // gets input
+        glfwGetWindowSize(window, &WINW, &WINH);                     // resizes window (if it happenes)
 
         //ren🅱️ering
-        glClearColor(0.1, 0.1, 0.1, 1); // grey background
+        glClearColor(0.1, 0.1, 0.1, 1);                     // grey background
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clearing background
 
         // resetting matricies
-        glm::mat4 world = glm::mat4(1.0f); // aka model matrix
-        glm::mat4 view = glm::mat4(1.0f); // aka camera matrix
+        glm::mat4 world = glm::mat4(1.0f);      // aka model matrix
+        glm::mat4 view = glm::mat4(1.0f);       // aka camera matrix
         glm::mat4 projection = glm::mat4(1.0f); // this ones important
 
         // view / camera matrix
@@ -118,7 +111,6 @@ int main(void) {
 
         // projection matrix !!!
         projection = glm::perspective(glm::radians(100.0f), (float)WINW / (float)WINH, 0.01f, 100.0f);
-
 
         // rendering a model
         defaultShader.Use(); // which shader to use?
@@ -147,23 +139,22 @@ int main(void) {
 
         teapot.Draw(defaultShader); // awwww yeaa
 
-
-
         lightShader.Use(); // use lighting shader
         //uniforms, again lol
         lightShader.SetMat4("projection", projection);
         lightShader.SetMat4("view", view);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++)
+        {
             world = glm::mat4(1.0f);
             world = glm::translate(world, lights[i].position); // position in world
-            world = glm::scale(world, glm::vec3(0.1f)); // scale in world
+            world = glm::scale(world, glm::vec3(0.1f));        // scale in world
             lightShader.SetMat4("world", world);
             lightShader.SetVec3("LightColour", lights[i].colour);
             lightBall.Draw(lightShader);
         }
 
         // draw skybox as last, ~optimised~
-        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        glDepthFunc(GL_LEQUAL); // change depth function so depth test passes when values are equal to depth buffer's content
         skyboxShader.Use();
         skyboxShader.SetMat4("view", glm::mat4(glm::mat3(camera.GetMatrix())));
         skyboxShader.SetMat4("projection", projection);
@@ -175,7 +166,7 @@ int main(void) {
         glDrawArrays(GL_TRIANGLES, 0, 36);
         skyboxVAO.Unbind();
         glDepthFunc(GL_LESS); // set depth function back to default
-        
+
         //std::cout << glGetError() << std::endl;
 
         //re🅱️resh
@@ -191,21 +182,21 @@ int main(void) {
     return 0;
 }
 
-
-
-
-
-GLFWwindow* GetWindow(void) {
-    if (!glfwInit()) return NULL; //init lib
+GLFWwindow *GetWindow(void)
+{
+    if (!glfwInit())
+        return NULL; //init lib
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // hints for the window context idk
 
     // make the window
-    GLFWwindow* window = glfwCreateWindow(WINW, WINH, "say hello to deez nuts", NULL, NULL);;
+    GLFWwindow *window = glfwCreateWindow(WINW, WINH, "say hello to deez nuts", NULL, NULL);
+    ;
 
     //error handling
-    if (!window) return NULL;
+    if (!window)
+        return NULL;
 
     // ??? make the window context or smthn
     glfwMakeContextCurrent(window);
@@ -224,13 +215,13 @@ GLFWwindow* GetWindow(void) {
     return window;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
@@ -241,29 +232,35 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe mode
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) camera.Move('f', deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) camera.Move('b', deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) camera.Move('l', deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) camera.Move('r', deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) camera.Move('u', deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) camera.Move('d', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.Move('f', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.Move('b', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.Move('l', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.Move('r', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        camera.Move('u', deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        camera.Move('d', deltaTime);
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void mouse_callback(GLFWwindow *window, double xpos, double ypos)
 {
     camera.UpdateAngles(xpos - lastX, lastY - ypos);
     lastX = xpos;
     lastY = ypos;
 }
 
-unsigned int loadTexture(char const* path, int wrapping, int minFilter, int maxFilter)
+unsigned int loadTexture(char const *path, int wrapping, int minFilter, int maxFilter)
 {
     stbi_set_flip_vertically_on_load(true);
     unsigned int textureID;
     glGenTextures(1, &textureID);
 
     int width, height, nrComponents;
-    unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
     if (data)
     {
         GLenum format;
