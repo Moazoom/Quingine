@@ -187,6 +187,5 @@ bool checkForIntersection(float *vertices1, int size1, glm::vec2 position1, floa
 }
 
 // this actually responds to collisions
-void collide()
-{
+void collide(){
 }

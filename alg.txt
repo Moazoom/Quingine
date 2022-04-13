@@ -1,0 +1,24 @@
+1. get array of pairs of points that make lines
+	- how?
+	- get array of points from GJK
+	- spin an angle around, find farthest point in any given direction
+	- angle per spin for angle = 360 / no of points
+	- store angles in vec2 2d array
+	- do a check to make sure all points were taken into account
+2. find closest edge
+	- use pythagoras to find magnitude of each points vector
+	- smallest vector is closes point
+	- find all occourences of point in our edge array
+	- use pythagoras again too find nest closest point
+	- these two points form the closest edge!
+3. find support points in direction of closest line, and add the points
+4. repeat 1 to reform outer edges
+5. once nearest edge on the minkowski difference is foiund:
+	- fet the normal pointing outwards
+	- get the angle wbetween the normal and (0, 1), an up vector
+	- use the angle to make a rotation matrix
+	- this matrix basically rotates the minkoyski difference so that the closest edge is paralell with the y axis, and above it? iff normal points away from origin yeah
+	- rotate any of the edges points through the matrix
+	- y magnitude is our offset vector! we can return this and call it a day
+
+- use the magnitude * by a mass value to move the object out of each other to toutching point very nice
