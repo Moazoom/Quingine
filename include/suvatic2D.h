@@ -9,9 +9,10 @@
 
 
 #include "glm/glm.hpp" // aw yea its maths time!!
-//#include "glm/gtx/rotate_vector.hpp"
+#include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtx/matrix_transform_2d.hpp"
 #include <iostream>
+#include <vector> // huh?
 
 
 // utility function for generating "hitboxes" vector arrays from float arrays, expects 2 same sized arrays
@@ -41,14 +42,14 @@ int translateColliders(glm::vec2* Colliders, int size, glm::vec2 position, float
 }
 
 // aka support function
-glm::vec2 findFarthestPoint(glm::vec2 targetDir, glm::vec2* vertices, int nVertices){
+glm::vec2 findFurthestPoint(glm::vec2 targetDir, glm::vec2* vertices, int nVertices){
     float temp = 0;
     float biggest = glm::dot(targetDir, *vertices); // INIT THIS 
     glm::vec2 farthest = *vertices; // and this too
     // loops through verticies
     for(int i = 0; i < nVertices; i++){
         temp = glm::dot(targetDir, *vertices); // stores the dot product
-        if(biggest < temp){ // checks if this point is farther, and sets accordingly
+        if(biggest < temp){ // checks if this point is further, and sets accordingly
             biggest = temp;
             farthest = *vertices;
         }
@@ -115,6 +116,9 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
     fillVecArray(&vertices2[0], &colliders2[0], size2);
     translateColliders(&colliders2[0], size2, position2, rotation2);
 
+    // array to store points
+    std::vector<glm::vec2> points;
+
     // triangle business
     glm::vec2 targetDir;
     glm::vec2 A, B, C; // our blyatful triangle
@@ -123,14 +127,17 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
     // first, find a direction
     targetDir = glm::vec2(1, 1);
     // getting first 3 points
-    C = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
+    C = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
+    points.push_back(C);
     targetDir = -C; // towards origin
 
-    B = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
+    B = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
+    points.push_back(B);
     targetDir = findNormalToOrigin(C, B); // find our next direction
     if(!checkIfBeyondOrigin(B - C, B)) return false; // if B isnt beyond origin, shapes arent intersecting
 
-    A = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
+    A = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
+    points.push_back(A);
     if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
 
     // main loop basically find new direction, discard a point, find a new one and try again
@@ -153,7 +160,8 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
         }
 
         // recasting A
-        A = findFarthestPoint(targetDir, colliders1, size1) - findFarthestPoint(-targetDir, colliders2, size2);
+        A = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
+        points.push_back(A);
         if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
 
         // retrying new triangle
@@ -164,3 +172,141 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
     //std::cout << num << "--";
     return true; // if all other checks fail
 }
+
+
+void findFurthestEdge(glm::vec2 direction, std::vector<glm::vec2> points, glm::vec2 (*edge)[2]){
+    float biggest = -INFINITE;
+    float temp;
+    int num = 0;
+    for(unsigned int i = 0; i < points.size(); i++){
+        temp = glm::dot(direction, points[i]);
+        // this should happen twice..
+        if(biggest <= temp){
+            biggest = temp;
+            (*edge)[1] = (*edge)[0];
+            (*edge)[0] = points[i];
+            num++;
+        }
+    }
+    if(num < 2) std::cout << "farthest edge fail rip" << std::endl;
+}
+
+// return vector array of edge pairs
+std::vector<glm::vec2[2]> getEdges(std::vector<glm::vec2> points){
+    glm::vec2 direction = {0, 1};
+    glm::vec2 edgeTemp[2];
+    float angleForEdges = 0.0f;
+    float amountToAdd = 360 / points.size();
+    std::vector<glm::vec2[2]> edges; // stores our edges
+    // loop through each point to find corresponding edges
+    for(unsigned int i = 0; i <  points.size(); i++){
+        direction = glm::rotate(direction, angleForEdges);
+        findFurthestEdge(direction, points, &edgeTemp);
+        edges.push_back(edgeTemp);
+        angleForEdges += amountToAdd;
+    }
+    return edges;
+}
+
+
+// checks if our edges vector has a point
+bool checkEdges(std::vector<glm::vec2[2]> edges, glm::vec2 point){
+    for(unsigned int i = 0; i < edges.size(); i++){
+        if(edges[i][0] == point) return true;
+        if(edges[i][1] == point) return true;
+    }
+    return false;
+}
+
+bool checkPoints(std::vector<glm::vec2> points, glm::vec2 point){
+    for(unsigned int i = 0; i < points.size(); i++){
+        if(points[i] == point) return true;
+    }
+    return false;
+}
+
+// using MEPA!!
+void collide(std::vector<glm::vec2> points, glm::vec2* iColliders1, int size1, glm::vec2* iColliders2, int size2){
+    // getting colliders arrays here from pointers
+    glm::vec2 colliders1[size1];
+    for(int i = 0; i < size1; i++){
+        colliders1[i] = *iColliders1;
+        iColliders1++;
+    }
+
+    glm::vec2 colliders2[size2];
+    for(int i = 0; i < size1; i++){
+        colliders2[i] = *iColliders2;
+        iColliders2++;
+    }
+
+    // first find the edges ezpz
+    std::vector<glm::vec2[2]> edges = getEdges(points); // stores our edges
+    // check all points were used
+    for(unsigned int i = 0; i < points.size(); i++){
+        if(!checkEdges(edges, points[i])) std::cout << "missing point in edges!" << std::endl;
+    }
+
+    glm::vec2 point;
+    glm::vec2 closestEdge[2];
+
+
+    // our main loop that checks if weve reached the outer edge
+    while(!checkPoints(points, point)){
+        // add point to points
+        points.push_back(point);
+        
+        // refresh edges
+        edges = getEdges(points);
+        // check all points were used
+        for(unsigned int i = 0; i < points.size(); i++){
+            if(!checkEdges(edges, points[i])) std::cout << "missing point in edges!" << std::endl;
+        }
+
+        // find closest point
+        float closest = 0;
+        glm::vec2 closestVertex;
+        for(unsigned int i = 0; i < points.size(); i++){
+            if(closest >= glm::length(points[i])){
+                closest = glm::length(points[i]);
+                closestVertex = points[i];
+            }
+        }
+
+        // find closest edge with the point
+        closest = 0;
+        closestEdge[0] = closestVertex;
+        for(unsigned int i = 0; i < edges.size(); i++){
+            if((edges[i][0] == closestVertex) && (closest >= glm::length(edges[i][1]))){
+                closest = glm::length(edges[i][1]);
+                closestEdge[1] = edges[i][1];
+            }
+            if((edges[i][1] == closestVertex) && (closest >= glm::length(edges[i][0]))){
+                closest = glm::length(edges[i][0]);
+                closestEdge[1] = edges[i][0];
+            }
+        }
+
+        // get closest direction
+        glm::vec2 direction = closestEdge[0] + closestEdge[1]; // close nuff?
+
+        // find farthest point in dir
+        point = findFurthestPoint(direction, colliders1, size1)  - findFurthestPoint(-direction, colliders2, size2);
+    }
+
+    // find closest point on outer edge once we get there, using closestEdge
+    // finding normal outwards to closest edge
+    glm::vec2 normal = glm::normalize(-findNormalToOrigin(closestEdge[0], closestEdge[1]));
+    // get angle to transform
+    float angle = acos(glm::dot(normal, glm::vec2(0, 1)));
+    // tranform any point on line by angle
+    closestEdge[0] = glm::rotate(closestEdge[0], -angle);
+    // y of this is what we need!
+    glm::vec2 offset = {0, closestEdge[0].y};
+    // rotate out offset vector back
+    offset = glm::rotate(offset, angle);
+
+    // printing for now
+    std::cout << "offset vector: " << offset.x << " , " << offset.y << std::endl;
+}
+

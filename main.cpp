@@ -8,8 +8,8 @@
 #include "buffers.h"
 #include "cubemap.h"
 #include "suvatic2D.h"
-#include "glm/gtx/rotate_vector.hpp"
-#include "glm/gtx/matrix_transform_2d.hpp"
+//#include "glm/gtx/rotate_vector.hpp"
+//#include "glm/gtx/matrix_transform_2d.hpp"
 
 int WINW = 1280;
 int WINH = 720;
@@ -36,7 +36,7 @@ glm::vec2 boxPos(3);
 float trigVertices[]{
     -1, 1, 0,
     1, 1, 0,
-    1, -1, 0,
+    1, -5, 0,
 };
 
 int trigIndices[]{
@@ -94,9 +94,9 @@ int main(void) {
         processInput(window); // gets input
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
-        trigRot += 45 * deltaTime;
+        //trigRot -= 45 * deltaTime;
 
-        bool hasCollided = checkForIntersection(&boxVertices[0], 5, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot);
+        bool hasCollided = 0; //checkForIntersection(&boxVertices[0], 5, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot);
 
 
         //ren🅱️ering
