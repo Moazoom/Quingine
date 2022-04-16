@@ -19,14 +19,12 @@ float boxVertices[]{
     -1, 1, 0,
     1, 1, 0,
     1, -1, 0,
-    -1, -1, 0,
-    -2, 0, 0
+    -1, -1, 0
 };
 
 int boxIndices[]{
     0, 2, 1,
-    0, 3, 2,
-    0, 3, 4
+    0, 3, 2
 };
 
 glm::vec2 boxPos(3);
@@ -36,7 +34,7 @@ glm::vec2 boxPos(3);
 float trigVertices[]{
     -1, 1, 0,
     1, 1, 0,
-    1, -5, 0,
+    1, -1, 0,
 };
 
 int trigIndices[]{
@@ -95,8 +93,9 @@ int main(void) {
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
         //trigRot -= 45 * deltaTime;
-
-        bool hasCollided = 0; //checkForIntersection(&boxVertices[0], 5, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot);
+        glm::vec2 offset = {0, 0};
+        bool hasCollided = checkForIntersection(&boxVertices[0], 4, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot, &offset);
+        trigPos += offset;
 
 
         //ren🅱️ering
@@ -108,7 +107,7 @@ int main(void) {
         world = glm::translate(world, glm::vec3(boxPos, 0));
 
         glm::mat4 projection = glm::mat4(1.0f);
-        projection = glm::ortho(-(float)WINW / 100.0f, (float)WINW / 100.0f, -(float)WINH / 100.0f, (float)WINH / 100.0f, -1.0f, 1.0f);
+        projection = glm::ortho(-(float)WINW / 50.0f, (float)WINW / 50.0f, -(float)WINH / 50.0f, (float)WINH / 50.0f, -1.0f, 1.0f);
 
         myShader.Use();
 
@@ -122,7 +121,7 @@ int main(void) {
             myShader.SetVec3("colour", glm::vec3(0, 1, 1));
         }
         boxVAO.Bind();
-        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
         // resetting matricies

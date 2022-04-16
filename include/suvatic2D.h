@@ -13,6 +13,9 @@
 #include "glm/gtx/matrix_transform_2d.hpp"
 #include <iostream>
 #include <vector> // huh?
+#include <array>
+
+glm::vec2 MEPA(std::vector<glm::vec2> polytope, glm::vec2* iColliders1, int size1, glm::vec2* iColliders2, int size2);
 
 
 // utility function for generating "hitboxes" vector arrays from float arrays, expects 2 same sized arrays
@@ -106,7 +109,7 @@ glm::vec2 checkTriangle(glm::vec2 A, glm::vec2 B, glm::vec2 C, int* region){
 
 
 // our main big boy, determines intersection between two sets of verticies, nice
-bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, float rotation1, float* vertices2, int size2, glm::vec2 position2, float rotation2){
+bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, float rotation1, float* vertices2, int size2, glm::vec2 position2, float rotation2, glm::vec2 *offset){
     // generate vector arrays
     glm::vec2 colliders1[size1];
     fillVecArray(vertices1, &colliders1[0], size1);
@@ -117,7 +120,7 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
     translateColliders(&colliders2[0], size2, position2, rotation2);
 
     // array to store points
-    std::vector<glm::vec2> points;
+    std::vector<glm::vec2> simplex = {glm::vec2(0), glm::vec2(0), glm::vec2(0)};
 
     // triangle business
     glm::vec2 targetDir;
@@ -128,16 +131,13 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
     targetDir = glm::vec2(1, 1);
     // getting first 3 points
     C = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
-    points.push_back(C);
     targetDir = -C; // towards origin
 
     B = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
-    points.push_back(B);
     targetDir = findNormalToOrigin(C, B); // find our next direction
     if(!checkIfBeyondOrigin(B - C, B)) return false; // if B isnt beyond origin, shapes arent intersecting
 
     A = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
-    points.push_back(A);
     if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
 
     // main loop basically find new direction, discard a point, find a new one and try again
@@ -149,59 +149,81 @@ bool checkForIntersection(float* vertices1, int size1, glm::vec2 position1, floa
 
         // if region is AB getting rid of C
         if(region == 1){
-            C = B;
-            B = A;
+            // C = B;
+            // B = A;
+            C = A; // to preserver handedness
         }
 
         // if region is AC getting rid of B
         if(region == 2){
-            B = C;
-            C = A;
+            // B = C;
+            // C = A;
+            B = A; // to preserve handedness
         }
 
         // recasting A
         A = findFurthestPoint(targetDir, colliders1, size1) - findFurthestPoint(-targetDir, colliders2, size2);
-        points.push_back(A);
         if(!checkIfBeyondOrigin(targetDir, A)) return false; // we know how it iz
 
         // retrying new triangle
         region = 0;
         targetDir = checkTriangle(A, B, C, &region);
     }
+    // getting simplex
+    simplex[0] = C;
+    simplex[1] = B;
+    simplex[2] = A;
 
     //std::cout << num << "--";
+    *offset = MEPA(simplex, colliders1, size1, colliders2, size2);
     return true; // if all other checks fail
 }
 
-
-void findFurthestEdge(glm::vec2 direction, std::vector<glm::vec2> points, glm::vec2 (*edge)[2]){
-    float biggest = -INFINITE;
+/*
+std::array<glm::vec2, 2> findFurthestEdge(glm::vec2 direction, std::vector<glm::vec2> points){
+    float biggest = -99999999999;
+    float second = biggest;
     float temp;
     int num = 0;
+    std::array<glm::vec2, 2> edge;
     for(unsigned int i = 0; i < points.size(); i++){
         temp = glm::dot(direction, points[i]);
         // this should happen twice..
-        if(biggest <= temp){
+        if(biggest < temp){
             biggest = temp;
-            (*edge)[1] = (*edge)[0];
-            (*edge)[0] = points[i];
-            num++;
+            edge[0] = points[i];
+            num = 1;
         }
     }
-    if(num < 2) std::cout << "farthest edge fail rip" << std::endl;
+
+    for(unsigned int i = 0; i < points.size(); i++){
+        temp = glm::dot(direction, points[i]);
+        // this should happen twice..
+        if((second < temp) && (temp < biggest)){
+            second = temp;
+            edge[1] = points[i];
+            std::cout << "points i: " << ", " << points[i].x << ", " << points[i].y << std::endl;
+            num = 2;
+        }
+    }
+
+    if(num < 2) std::cout << "farthest edge fail rip" << ", " << edge[0].x << ", " << edge[0].y << ", " << ", " << edge[1].x << ", " << edge[1].y << ", " << std::endl;
+    else std::cout << "farthest edge win!!" << ", " << edge[0].x << ", " << edge[0].y << ", " << ", " << edge[1].x << ", " << edge[1].y << ", " << num << std::endl;
+    return edge;
 }
 
+
 // return vector array of edge pairs
-std::vector<glm::vec2[2]> getEdges(std::vector<glm::vec2> points){
+std::vector<std::array<glm::vec2, 2>> getEdges(std::vector<glm::vec2> points){
     glm::vec2 direction = {0, 1};
-    glm::vec2 edgeTemp[2];
+    std::array<glm::vec2, 2> edgeTemp;
     float angleForEdges = 0.0f;
     float amountToAdd = 360 / points.size();
-    std::vector<glm::vec2[2]> edges; // stores our edges
+    std::vector<std::array<glm::vec2, 2>> edges; // stores our edges
     // loop through each point to find corresponding edges
     for(unsigned int i = 0; i <  points.size(); i++){
         direction = glm::rotate(direction, angleForEdges);
-        findFurthestEdge(direction, points, &edgeTemp);
+        edgeTemp = findFurthestEdge(direction, points);
         edges.push_back(edgeTemp);
         angleForEdges += amountToAdd;
     }
@@ -210,7 +232,7 @@ std::vector<glm::vec2[2]> getEdges(std::vector<glm::vec2> points){
 
 
 // checks if our edges vector has a point
-bool checkEdges(std::vector<glm::vec2[2]> edges, glm::vec2 point){
+bool checkEdges(std::vector<std::array<glm::vec2, 2>> edges, glm::vec2 point){
     for(unsigned int i = 0; i < edges.size(); i++){
         if(edges[i][0] == point) return true;
         if(edges[i][1] == point) return true;
@@ -224,6 +246,7 @@ bool checkPoints(std::vector<glm::vec2> points, glm::vec2 point){
     }
     return false;
 }
+
 
 // using MEPA!!
 void collide(std::vector<glm::vec2> points, glm::vec2* iColliders1, int size1, glm::vec2* iColliders2, int size2){
@@ -241,10 +264,12 @@ void collide(std::vector<glm::vec2> points, glm::vec2* iColliders1, int size1, g
     }
 
     // first find the edges ezpz
-    std::vector<glm::vec2[2]> edges = getEdges(points); // stores our edges
+    std::vector<std::array<glm::vec2, 2>> edges = getEdges(points); // stores our edges
+
+    
     // check all points were used
     for(unsigned int i = 0; i < points.size(); i++){
-        if(!checkEdges(edges, points[i])) std::cout << "missing point in edges!" << std::endl;
+        //if(!checkEdges(edges, points[i])) std::cout << "missing point in edges!" << std::endl;
     }
 
     glm::vec2 point;
@@ -260,7 +285,7 @@ void collide(std::vector<glm::vec2> points, glm::vec2* iColliders1, int size1, g
         edges = getEdges(points);
         // check all points were used
         for(unsigned int i = 0; i < points.size(); i++){
-            if(!checkEdges(edges, points[i])) std::cout << "missing point in edges!" << std::endl;
+            //if(!checkEdges(edges, points[i])) std::cout << "missing point in edges!" << std::endl;
         }
 
         // find closest point
@@ -307,6 +332,88 @@ void collide(std::vector<glm::vec2> points, glm::vec2* iColliders1, int size1, g
     offset = glm::rotate(offset, angle);
 
     // printing for now
-    std::cout << "offset vector: " << offset.x << " , " << offset.y << std::endl;
+    //std::cout << "offset vector: " << offset.x << " , " << offset.y << std::endl;
+}
+*/
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// this isnt really working, lets try something fresh:
+glm::vec2 MEPA(std::vector<glm::vec2> polytope, glm::vec2* iColliders1, int size1, glm::vec2* iColliders2, int size2){
+    // getting colliders arrays here from pointers
+    glm::vec2 colliders1[size1];
+    for(int i = 0; i < size1; i++){
+        colliders1[i] = *iColliders1;
+        iColliders1++;
+    }
+
+    glm::vec2 colliders2[size2];
+    for(int i = 0; i < size1; i++){
+        colliders2[i] = *iColliders2;
+        iColliders2++;
+    }
+
+    int minIndex = 0;
+    float minDistance = INFINITE;
+    glm::vec2 minNormal;
+
+    while(minDistance == INFINITE){
+        for(unsigned int i = 0; i < polytope.size(); i++){
+            int j = (i + 1) % polytope.size();
+
+            glm::vec2 normal = - findNormalToOrigin(polytope[i], polytope[j]);
+            float distance = glm::dot(polytope[i], normal);
+
+            // flipping for handedness
+            if(distance < 0) distance *= -1;
+
+            if(minDistance > distance){
+                minIndex = j;
+                minDistance = distance;
+                minNormal = normal;
+            }
+        }
+
+        glm::vec2 support = findFurthestPoint(minNormal, colliders1, size1) - findFurthestPoint(-minNormal, colliders2, size2);
+        float sDistance = glm::dot(minNormal, support);
+
+        if(abs(sDistance - minDistance) > 0.00001f){
+            minDistance = INFINITE;
+            polytope.insert(polytope.begin() + minIndex, support);
+        }
+    }
+
+    glm::vec2 result = minNormal * (float)(minDistance + 0.1f);
+    std::cout << "result vector: " << result.x << " , " << result.y << std::endl;
+    return result;
+}
+/* 
+void Mepa(points, shape1, shape2){
+    int minDistance = Infinite
+    vec2 minNormal
+
+    while(minDistance == Infinite){
+        for(i < amount of polytope points){
+            get an edge
+
+            find outward normal
+
+            distance = dot(normal, one point on edge)
+
+            if(distance < minDist){
+                minDist = distance
+                minNormal = normal
+            }
+        }
+
+        vec2 support = suport function taking 2 hapes and our minNormal
+        float sDistance = dot(minNormal, support)
+
+        if(abs(sDistance - MinDistance) > 0.001){
+            minDistance = Infinite;
+            and add support to polytope
+        }
+    }
+    return minNormal * mibnDistance
 }
 
+
+*/
