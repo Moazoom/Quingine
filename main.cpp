@@ -92,7 +92,7 @@ int main(void) {
         processInput(window); // gets input
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
-        //trigRot -= 45 * deltaTime;
+        trigRot -= 45 * deltaTime;
         glm::vec2 offset = {0, 0};
         bool hasCollided = checkForIntersection(&boxVertices[0], 4, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot, &offset);
         trigPos += offset;
