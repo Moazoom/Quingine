@@ -8,6 +8,7 @@
 #include "buffers.h"
 #include "cubemap.h"
 #include "suvatic2D.h"
+#include "physics.h"
 //#include "glm/gtx/rotate_vector.hpp"
 //#include "glm/gtx/matrix_transform_2d.hpp"
 
@@ -29,6 +30,8 @@ int boxIndices[]{
 
 glm::vec2 boxPos(3);
 
+physicsObject box(glm::vec2(3, 3), 1, &boxVertices[0], 4);
+
 
 // a triangle?
 float trigVertices[]{
@@ -43,6 +46,8 @@ int trigIndices[]{
 
 glm::vec2 trigPos(0.0f);
 float trigRot = 0.0f;
+
+//physicsObject triangle(glm::vec2(0), 1, &trigVertices[0], 3);
 
 //prototypes suii
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -83,7 +88,7 @@ int main(void) {
     // VV render loop i think VV
     while (!glfwWindowShouldClose(window))
     {
-        //delta tiem
+        //🅱️elta tiem
         deltaTime = glfwGetTime() - lastFrame;
         lastFrame = glfwGetTime();
 
@@ -92,11 +97,15 @@ int main(void) {
         processInput(window); // gets input
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
+        // 🅱️ysics
+        UpdatePhysics(deltaTime);
+        /* no collisions for now
         trigRot -= 45 * deltaTime;
         glm::vec2 offset = {0, 0};
         bool hasCollided = checkForIntersection(&boxVertices[0], 4, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot, &offset);
         trigPos += offset;
-
+        */
+       bool hasCollided = false;
 
         //ren🅱️ering
         glClearColor(0.1, 0.1, 0.1, 1); // grey background
@@ -104,7 +113,7 @@ int main(void) {
 
         // resetting matricies
         glm::mat4 world = glm::mat4(1.0f); // update position in this
-        world = glm::translate(world, glm::vec3(boxPos, 0));
+        world = glm::translate(world, glm::vec3(box.position, 0));
 
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::ortho(-(float)WINW / 50.0f, (float)WINW / 50.0f, -(float)WINH / 50.0f, (float)WINH / 50.0f, -1.0f, 1.0f);
@@ -203,10 +212,11 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe mode
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) boxPos.y += (float)(5 * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) boxPos.x -= (float)(5 * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) boxPos.y -= (float)(5 * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) boxPos.x += (float)(5 * deltaTime);
+    float speed = 5;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) box.AddForce(glm::vec2(0, 1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) box.AddForce(glm::vec2(-1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) box.AddForce(glm::vec2(0, -1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) box.AddForce(glm::vec2(1, 0) * speed);
 
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) trigPos.y += (float)(5 * deltaTime);
     if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) trigPos.x -= (float)(5 * deltaTime);

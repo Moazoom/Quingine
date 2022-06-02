@@ -6,6 +6,7 @@
 // lets start with 2d
 
 // helpful vid: https://www.youtube.com/watch?v=ajv46BSqcK4
+// and thyis one for EPA https://www.youtube.com/watch?v=0XQ2FSz3EK8
 
 
 #include "glm/glm.hpp" // aw yea its maths time!!
