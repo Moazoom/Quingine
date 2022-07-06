@@ -7,8 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "buffers.h"
 #include "cubemap.h"
-#include "suvatic2D.h"
-#include "physics.h"
+#include "physics.cpp"
 //#include "glm/gtx/rotate_vector.hpp"
 //#include "glm/gtx/matrix_transform_2d.hpp"
 
@@ -41,13 +40,28 @@ float trigVertices[]{
 };
 
 int trigIndices[]{
-    0, 2, 1,
+    0, 2, 1
 };
 
-glm::vec2 trigPos(0.0f);
-float trigRot = 0.0f;
+physicsObject triangle(glm::vec2(0, 0), 0.5, &trigVertices[0], 3);
 
-//physicsObject triangle(glm::vec2(0), 1, &trigVertices[0], 3);
+
+
+float pentVertices[]{ // points go clockwise
+    1, 0, 0, // to de right
+    0.31, -0.95, 0, // bottom right
+    -0.81, -0.59, 0, // bottom left
+    -0.81, 0.59, 0, // top left
+    0.31, 0.95, 0 // top right
+};
+
+int pentIndices[]{ // clockwise handedness
+    0, 1, 2,
+    0, 2, 3,
+    0, 3, 4
+};
+
+physicsObject pentagon(glm::vec2(0, -3), 2, &pentVertices[0], 5);
 
 //prototypes suii
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -85,9 +99,80 @@ int main(void) {
     trigVAO.Unbind();
     trigEBO.Unbind();
 
+    float origVertices[] = {0, 0, 0,
+                            0, 0, 0,
+                            0, 0, 0};
+
+    int origIndices[] = {0, 1, 2};
+
+    VAO origVAO;
+    EBO origEBO(origIndices, sizeof(origIndices));
+    VBO origVBO(origVertices, sizeof(origVertices));
+    origVAO.Bind();
+    origVAO.LinkVBO(origVBO, 0, 3, 3, 0);
+    origEBO.Bind();
+    origVAO.Unbind();
+    origEBO.Unbind();
+
+    VAO pentVAO;
+    EBO pentEBO(pentIndices, sizeof(pentIndices));
+    VBO pentVBO(pentVertices, sizeof(pentVertices));
+    pentVAO.Bind();
+    pentVAO.LinkVBO(pentVBO, 0, 3, 3, 0);
+    pentEBO.Bind();
+    pentVAO.Unbind();
+    pentEBO.Unbind();
+
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
     // VV render loop i think VV
     while (!glfwWindowShouldClose(window))
     {
+        // simp!!
+        simpVertices[0] = simplex[0].x;
+        simpVertices[1] = simplex[0].y;
+
+        simpVertices[3] = simplex[1].x;
+        simpVertices[4] = simplex[1].y;
+
+        simpVertices[6] = simplex[2].x;
+        simpVertices[7] = simplex[2].y;
+
+        VAO simpVAO;
+        EBO simpEBO(simpIndices, sizeof(simpIndices));
+        VBO simpVBO(simpVertices, sizeof(simpVertices));
+        simpVAO.Bind();
+        simpVAO.LinkVBO(simpVBO, 0, 3, 3, 0);
+        simpEBO.Bind();
+        simpVAO.Unbind();
+        simpEBO.Unbind();
+
+        supVertices[0] = supports[0].x;
+        supVertices[1] = supports[0].y;
+
+        supVertices[3] = supports[1].x;
+        supVertices[4] = supports[1].y;
+
+        supVertices[6] = supports[2].x;
+        supVertices[7] = supports[2].y;
+
+        supVertices[9] = supports[3].x;
+        supVertices[10] = supports[3].y;
+
+        supVertices[12] = supports[4].x;
+        supVertices[13] = supports[4].y;
+
+        supVertices[15] = supports[5].x;
+        supVertices[16] = supports[5].y;
+
+        VAO supVAO;
+        VBO supVBO(supVertices, sizeof(supVertices));
+        supVAO.Bind();
+        supVAO.LinkVBO(supVBO, 0, 3, 3, 0);
+        supVAO.Unbind();
+
+
+
         //🅱️elta tiem
         deltaTime = glfwGetTime() - lastFrame;
         lastFrame = glfwGetTime();
@@ -105,7 +190,26 @@ int main(void) {
         bool hasCollided = checkForIntersection(&boxVertices[0], 4, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot, &offset);
         trigPos += offset;
         */
-       bool hasCollided = false;
+        bool hasCollided = GJK(*pStart, *(*pStart).pNext);
+        //triangle.rotation += 0.1;
+
+       // looping
+        if(triangle.position.x > 25) triangle.position.x = -25;
+        if(pentagon.position.x > 25) pentagon.position.x = -25;
+        if(box.position.x > 25) box.position.x = -25;
+
+        if(triangle.position.x < -25) triangle.position.x = 25;
+        if(pentagon.position.x < -25) pentagon.position.x = 25;
+        if(box.position.x < -25) box.position.x = 25;
+
+
+        if(triangle.position.y > 15) triangle.position.y = -15;
+        if(pentagon.position.y > 15) pentagon.position.y = -15;
+        if(box.position.y > 15) box.position.y = -15;
+
+        if(triangle.position.y < -15) triangle.position.y = 15;
+        if(pentagon.position.y < -15) pentagon.position.y = 15;
+        if(box.position.y < -15) box.position.y = 15;
 
         //ren🅱️ering
         glClearColor(0.1, 0.1, 0.1, 1); // grey background
@@ -114,43 +218,70 @@ int main(void) {
         // resetting matricies
         glm::mat4 world = glm::mat4(1.0f); // update position in this
         world = glm::translate(world, glm::vec3(box.position, 0));
-
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::ortho(-(float)WINW / 50.0f, (float)WINW / 50.0f, -(float)WINH / 50.0f, (float)WINH / 50.0f, -1.0f, 1.0f);
-
         myShader.Use();
-
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-
-        if(hasCollided){
-            myShader.SetVec3("colour", glm::vec3(1, 0, 0));
-        }
-        else{
-            myShader.SetVec3("colour", glm::vec3(0, 1, 1));
-        }
+        myShader.SetVec3("colour", glm::vec3(0, 1, 1));
         boxVAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
         // resetting matricies
         world = glm::mat4(1.0f); // update position in this
-        world = glm::translate(world, glm::vec3(trigPos, 0));
-
-        world = glm::rotate(world, glm::radians(trigRot), glm::vec3(0, 0, 1));
-
+        world = glm::translate(world, glm::vec3(triangle.position, 0));
+        world = glm::rotate(world, glm::radians(triangle.rotation), glm::vec3(0, 0, 1));
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-
-        // collision!
         if(hasCollided){
-            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
+            myShader.SetVec3("colour", glm::vec3(1, 1, 1));
         }
         else{
             myShader.SetVec3("colour", glm::vec3(1, 1, 0));
         }
         trigVAO.Bind();
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+
+        // pentagon
+        world = glm::mat4(1.0f); // update position in this
+        world = glm::translate(world, glm::vec3(pentagon.position, 0));
+        world = glm::rotate(world, glm::radians(pentagon.rotation), glm::vec3(0, 0, 1));
+        myShader.SetMat4("world", world);
+        myShader.SetMat4("projection", projection);
+        // collision!
+        if(hasCollided){
+            myShader.SetVec3("colour", glm::vec3(1, 0, 1));
+        }
+        else{
+            myShader.SetVec3("colour", glm::vec3(1, 0, 1));
+        }
+        pentVAO.Bind();
+        //glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+
+        // simp
+        world = glm::mat4(1.0f);
+        myShader.SetMat4("world", world);
+        myShader.SetMat4("projection", projection);
+        myShader.SetVec3("colour", glm::vec3(1, 0, 1));
+        simpVAO.Bind();
+        if(hasCollided || 1) glDrawElements(GL_LINE_LOOP, 3, GL_UNSIGNED_INT, 0);
+
+        // orig
+        world = glm::mat4(1.0f);
+        myShader.SetMat4("world", world);
+        myShader.SetMat4("projection", projection);
+        myShader.SetVec3("colour", glm::vec3(1, 1, 1));
+        origVAO.Bind();
+        glDrawElements(GL_POINTS, 3, GL_UNSIGNED_INT, 0);
+
+        // sup
+        world = glm::mat4(1.0f);
+        myShader.SetMat4("world", world);
+        myShader.SetMat4("projection", projection);
+        myShader.SetVec3("colour", glm::vec3(1, 0, 0));
+        supVAO.Bind();
+        if(hasCollided || 1) glDrawArrays(GL_POINTS, 0, 6);
 
         //re🅱️resh
         glfwSwapBuffers(window);
@@ -218,8 +349,13 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) box.AddForce(glm::vec2(0, -1) * speed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) box.AddForce(glm::vec2(1, 0) * speed);
 
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) trigPos.y += (float)(5 * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) trigPos.x -= (float)(5 * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) trigPos.y -= (float)(5 * deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) trigPos.x += (float)(5 * deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) triangle.AddForce(glm::vec2(0, 1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) triangle.AddForce(glm::vec2(-1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) triangle.AddForce(glm::vec2(0, -1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) triangle.AddForce(glm::vec2(1, 0) * speed);
+
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) pentagon.AddForce(glm::vec2(0, 1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) pentagon.AddForce(glm::vec2(-1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) pentagon.AddForce(glm::vec2(0, -1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) pentagon.AddForce(glm::vec2(1, 0) * speed);
 }

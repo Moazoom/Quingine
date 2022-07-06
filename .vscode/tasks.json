@@ -16,7 +16,7 @@
           "-lglfw3",
           "-lgdi32",
           "-lopengl32",
-          "-lassimp.dll",
+          "-lassimp.dll"
         ],
         "options": {
           "cwd": "${fileDirname}"

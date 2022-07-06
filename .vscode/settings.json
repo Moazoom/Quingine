@@ -56,5 +56,6 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "glad.c": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
