@@ -8,8 +8,6 @@
 #include "buffers.h"
 #include "cubemap.h"
 #include "physics.cpp"
-//#include "glm/gtx/rotate_vector.hpp"
-//#include "glm/gtx/matrix_transform_2d.hpp"
 
 int WINW = 1280;
 int WINH = 720;
@@ -27,12 +25,10 @@ int boxIndices[]{
     0, 3, 2
 };
 
-glm::vec2 boxPos(3);
-
 physicsObject box(glm::vec2(3, 3), 1, &boxVertices[0], 4);
 
 
-// a triangle?
+// a triangle
 float trigVertices[]{
     -1, 1, 0,
     1, 1, 0,
@@ -99,21 +95,6 @@ int main(void) {
     trigVAO.Unbind();
     trigEBO.Unbind();
 
-    float origVertices[] = {0, 0, 0,
-                            0, 0, 0,
-                            0, 0, 0};
-
-    int origIndices[] = {0, 1, 2};
-
-    VAO origVAO;
-    EBO origEBO(origIndices, sizeof(origIndices));
-    VBO origVBO(origVertices, sizeof(origVertices));
-    origVAO.Bind();
-    origVAO.LinkVBO(origVBO, 0, 3, 3, 0);
-    origEBO.Bind();
-    origVAO.Unbind();
-    origEBO.Unbind();
-
     VAO pentVAO;
     EBO pentEBO(pentIndices, sizeof(pentIndices));
     VBO pentVBO(pentVertices, sizeof(pentVertices));
@@ -128,55 +109,9 @@ int main(void) {
     // VV render loop i think VV
     while (!glfwWindowShouldClose(window))
     {
-        // simp!!
-        simpVertices[0] = simplex[0].x;
-        simpVertices[1] = simplex[0].y;
-
-        simpVertices[3] = simplex[1].x;
-        simpVertices[4] = simplex[1].y;
-
-        simpVertices[6] = simplex[2].x;
-        simpVertices[7] = simplex[2].y;
-
-        VAO simpVAO;
-        EBO simpEBO(simpIndices, sizeof(simpIndices));
-        VBO simpVBO(simpVertices, sizeof(simpVertices));
-        simpVAO.Bind();
-        simpVAO.LinkVBO(simpVBO, 0, 3, 3, 0);
-        simpEBO.Bind();
-        simpVAO.Unbind();
-        simpEBO.Unbind();
-
-        supVertices[0] = supports[0].x;
-        supVertices[1] = supports[0].y;
-
-        supVertices[3] = supports[1].x;
-        supVertices[4] = supports[1].y;
-
-        supVertices[6] = supports[2].x;
-        supVertices[7] = supports[2].y;
-
-        supVertices[9] = supports[3].x;
-        supVertices[10] = supports[3].y;
-
-        supVertices[12] = supports[4].x;
-        supVertices[13] = supports[4].y;
-
-        supVertices[15] = supports[5].x;
-        supVertices[16] = supports[5].y;
-
-        VAO supVAO;
-        VBO supVBO(supVertices, sizeof(supVertices));
-        supVAO.Bind();
-        supVAO.LinkVBO(supVBO, 0, 3, 3, 0);
-        supVAO.Unbind();
-
-
-
         //🅱️elta tiem
         deltaTime = glfwGetTime() - lastFrame;
         lastFrame = glfwGetTime();
-
 
         //in🅱️ut
         processInput(window); // gets input
@@ -184,14 +119,8 @@ int main(void) {
 
         // 🅱️ysics
         UpdatePhysics(deltaTime);
-        /* no collisions for now
-        trigRot -= 45 * deltaTime;
-        glm::vec2 offset = {0, 0};
-        bool hasCollided = checkForIntersection(&boxVertices[0], 4, boxPos, 0, &trigVertices[0], 3, trigPos, trigRot, &offset);
-        trigPos += offset;
-        */
-        bool hasCollided = GJK(*pStart, *(*pStart).pNext);
-        //triangle.rotation += 0.1;
+        bool hasCollided = GJK(*(*pStart).pNext, *pEnd);
+        triangle.rotation += 0.1;
 
        // looping
         if(triangle.position.x > 25) triangle.position.x = -25;
@@ -257,31 +186,7 @@ int main(void) {
             myShader.SetVec3("colour", glm::vec3(1, 0, 1));
         }
         pentVAO.Bind();
-        //glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
-
-        // simp
-        world = glm::mat4(1.0f);
-        myShader.SetMat4("world", world);
-        myShader.SetMat4("projection", projection);
-        myShader.SetVec3("colour", glm::vec3(1, 0, 1));
-        simpVAO.Bind();
-        if(hasCollided || 1) glDrawElements(GL_LINE_LOOP, 3, GL_UNSIGNED_INT, 0);
-
-        // orig
-        world = glm::mat4(1.0f);
-        myShader.SetMat4("world", world);
-        myShader.SetMat4("projection", projection);
-        myShader.SetVec3("colour", glm::vec3(1, 1, 1));
-        origVAO.Bind();
-        glDrawElements(GL_POINTS, 3, GL_UNSIGNED_INT, 0);
-
-        // sup
-        world = glm::mat4(1.0f);
-        myShader.SetMat4("world", world);
-        myShader.SetMat4("projection", projection);
-        myShader.SetVec3("colour", glm::vec3(1, 0, 0));
-        supVAO.Bind();
-        if(hasCollided || 1) glDrawArrays(GL_POINTS, 0, 6);
+        glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
         //re🅱️resh
         glfwSwapBuffers(window);

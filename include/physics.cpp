@@ -18,15 +18,6 @@
 #include <iostream>
 #include <vector>
 
-// like factorial but for adding
-int Addtorial(int num){
-    int temp = num;
-    while(num != 0){
-        temp += num - 1;
-    }
-    return temp;
-}
-
 class physicsObject{
     public:
         glm::vec2 position, velocity, resultantForce; // should reset resultant force to 0 at the start of frame
@@ -89,9 +80,6 @@ int sizeOfPhysicsWorld; // assumes no objects are deleted
 physicsObject::physicsObject(glm::vec2 iposition, float imass, float* array, int size){
     position = iposition;
     mass = imass;
-    //glm::vec2 vecArray[size];
-    //fillVecArray(array, &vecArray[0], size);
-    //base = convertArrToList(vecArray, size); // converting arrays of vec2s to vector lists
     base = floatToVecList(array, size);
     collider = base;
     if(pStart == nullptr){ // first object in physics world
@@ -108,28 +96,6 @@ physicsObject::physicsObject(glm::vec2 iposition, float imass, float* array, int
 
 
 // GJK
-std::vector<glm::vec2> simplex(3);
-
-std::vector<glm::vec2> supports(6);
-
-float supVertices[]{
-    -1, 1, 0,
-    1, 1, 0,
-    1, 1, 0,
-    -1, 1, 0,
-    1, 1, 0,
-    1, 1, 0
-};
-
-float simpVertices[]{
-    -1, 1, 0,
-    1, 1, 0,
-    1, -1, 0,
-};
-
-int simpIndices[]{
-    0, 2, 1
-};
 
 // translates colliders by posisiton and rotation, PO needs to be passed as reference
 void TranslatePO(physicsObject* PO){
@@ -139,12 +105,12 @@ void TranslatePO(physicsObject* PO){
     transform = glm::rotate(transform, glm::radians((*PO).rotation));
     // now we apply this matrix tranform to all our collider points
     for(unsigned int i = 0; i < size((*PO).base); i++){
-        (*PO).collider[i] = glm::vec2(transform * glm::vec3((*PO).base[i], 1)); // huh?
+        (*PO).collider[i] = glm::vec2(transform * glm::vec3((*PO).base[i], 1)); // huh
     }
 }
 
 // support function, returns hull point given two shapes and a direction
-glm::vec2 Support(physicsObject PO1, physicsObject PO2, glm::vec2 direction, glm::vec2* ip1, glm::vec2* ip2){
+glm::vec2 Support(physicsObject PO1, physicsObject PO2, glm::vec2 direction){
     // get the largest dot product of first collider
     float temp = 0;
     float biggest = glm::dot(direction, PO1.collider[0]); // huh?
@@ -169,9 +135,6 @@ glm::vec2 Support(physicsObject PO1, physicsObject PO2, glm::vec2 direction, glm
         }
     }
 
-    *ip1 = point1;
-    *ip2 = point2;
-
     //return the difference
     return point1 - point2;
 }
@@ -192,8 +155,6 @@ int TriangleCase(glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2* direction){
         return 2;
     }
 
-    //if(glm::dot(*direction, A) < 0) return 3;
-
     // if both checks fail, origin is with simplex
     return 0;
 }
@@ -204,68 +165,35 @@ bool GJK(physicsObject PO1, physicsObject PO2){
     TranslatePO(&PO1);
     TranslatePO(&PO2);
 
-    glm::vec2 p1, p2;
     // find first simplex point
     glm::vec2 direction = glm::vec2(1, 1); // where to look
     glm::vec2 C, B, A; // simplex triangle, from oldest to newest point
-    C = Support(PO1, PO2, direction, &p1, &p2);
-    supports[0] = p1;
-    supports[1] = p2;
-    simplex[2] = C;
+    C = Support(PO1, PO2, direction);
     // find next direction to search in
     direction = -C; // towareds origin
 
     // find next simplex point
-    B = Support(PO1, PO2, direction, &p1, &p2);
-    supports[2] = p1;
-    supports[3] = p2;
-    simplex[1] = B;
+    B = Support(PO1, PO2, direction);
+    // loop line case
     while (glm::dot(direction, B) < 0){
         C = B;
-        supports[0] = supports[2];
-        supports[1] = supports[3];
-        simplex[2] = C;
-
-        B = Support(PO1, PO2, direction, &p1, &p2);
-        supports[2] = p1;
-        supports[3] = p2;
-        simplex[1] = B;
+        B = Support(PO1, PO2, direction);
         if (B == C) return false; // sanity check making sure point passes origin 
     }
-    // find next direction (normal to line towards origin) using tiple product
-    // (AB X AO) X AB
+    // find next direction (normal to line towards origin) using tiple product (AB X AO) X AB
     direction = glm::vec2(glm::cross(glm::cross(glm::vec3(B-C, 0), glm::vec3(-C, 0)), glm::vec3(B-C, 0))); // might break
-    //std::cout << std::endl << direction.x << ", " << direction.y;
-    // complete simplex triangle
-    A = Support(PO2, PO2, direction, &p1, &p2);
-    supports[4] = p1;
-    supports[5] = p2;
-    simplex[0] = A;
-    //if(glm::dot(direction, A) <= 0) return false; // sanity check
 
+    // complete simplex triangle
+    A = Support(PO2, PO2, direction);
     // loop the triangle case, chase better triangles!
-    int region = 3; // TriangleCase(A, B, C, &direction);
-    //std::cout << region << std::endl;
+    int region = 3;
     while(region != 0){
         // lose the furthest point
-        if(region == 1){
-            C = A;
-            supports[0] = supports[4];
-            supports[1] = supports[5];
-        }
-        if(region == 2){
-            B = A;
-            supports[2] = supports[4];
-            supports[3] = supports[5];
-        }
+        if(region == 1) C = A;
+        if(region == 2) B = A;
 
         // recasting A
-        A = Support(PO1, PO2, direction, &p1, &p2);
-        supports[4] = p1;
-        supports[5] = p2;
-        simplex[0] = A;
-        simplex[1] = B;
-        simplex[2] = C;
+        A = Support(PO1, PO2, direction);
         if(glm::dot(direction, A) <= 0) return false; // sanity check
         if((C == A) || (B == A)) return false; // sanity check
 
@@ -273,9 +201,6 @@ bool GJK(physicsObject PO1, physicsObject PO2){
         region = TriangleCase(A, B, C, &direction);
     }
 
-    simplex[0] = A;
-    simplex[1] = B;
-    simplex[2] = C;
     // if loop breaks, there was a collision!
     return true;
 }
