@@ -161,31 +161,31 @@ int TriangleCase(glm::vec2 A, glm::vec2 B, glm::vec2 C, glm::vec2* direction){
 }
 
 // GJK algorithm for detecting collisions
-bool GJK(physicsObject PO1, physicsObject PO2){
+bool GJK(physicsObject* PO1, physicsObject* PO2){
     // translate our colliders by position + rotation
-    TranslatePO(&PO1);
-    TranslatePO(&PO2);
+    TranslatePO(PO1);
+    TranslatePO(PO2);
 
     // find first simplex point
     glm::vec2 direction = glm::vec2(1, 1); // where to look
     glm::vec2 C, B, A; // simplex triangle, from oldest to newest point
-    C = Support(PO1, PO2, direction);
+    C = Support(*PO1, *PO2, direction);
     // find next direction to search in
     direction = -C; // towareds origin
 
     // find next simplex point
-    B = Support(PO1, PO2, direction);
+    B = Support(*PO1, *PO2, direction);
     // loop line case
     while (glm::dot(direction, B) < 0){
         C = B;
-        B = Support(PO1, PO2, direction);
+        B = Support(*PO1, *PO2, direction);
         if (B == C) return false; // sanity check making sure point passes origin 
     }
     // find next direction (normal to line towards origin) using tiple product (AB X AO) X AB
     direction = glm::vec2(glm::cross(glm::cross(glm::vec3(B-C, 0), glm::vec3(-C, 0)), glm::vec3(B-C, 0))); // might break
 
     // complete simplex triangle
-    A = Support(PO2, PO2, direction);
+    A = Support(*PO2, *PO2, direction);
     // loop the triangle case, chase better triangles!
     int region = 3;
     while(region != 0){
@@ -194,13 +194,16 @@ bool GJK(physicsObject PO1, physicsObject PO2){
         if(region == 2) B = A;
 
         // recasting A
-        A = Support(PO1, PO2, direction);
+        A = Support(*PO1, *PO2, direction);
         if(glm::dot(direction, A) <= 0) return false; // sanity check
         if((C == A) || (B == A)) return false; // sanity check
 
         // checking new triangle
         region = TriangleCase(A, B, C, &direction);
     }
+
+    (*PO1).colliding = true;
+    (*PO2).colliding = true;
 
     // if loop breaks, there was a collision!
     return true;
@@ -216,6 +219,8 @@ void UpdatePhysics(float deltaTime){
     glm::vec2 acceleration;
     
     for(int i = 0; i < sizeOfPhysicsWorld; i++){ // iterates through list
+        (*pCurrent).colliding = false; // yeah
+
         acceleration = (*pCurrent).resultantForce / (*pCurrent).mass;
         (*pCurrent).velocity += acceleration * deltaTime;
         (*pCurrent).position += (*pCurrent).velocity * deltaTime;// nice
@@ -233,12 +238,8 @@ void UpdatePhysics(float deltaTime){
         while(pPO2 != pEnd){
             pPO2 = (*pPO2).pNext;
 
-            (*pPO1).colliding = false;
-            (*pPO2).colliding = false;
-
-            if(GJK(*pPO1, *pPO2)){
-                (*pPO1).colliding = true;
-                (*pPO2).colliding = true;
+            if(GJK(pPO1, pPO2)){
+                // do something
             }
         }
         // update active objects to check

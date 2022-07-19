@@ -154,7 +154,7 @@ int main(void) {
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
         if(box.colliding){
-            myShader.SetVec3("colour", glm::vec3(1, 0, 0));
+            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
         else {
             myShader.SetVec3("colour", glm::vec3(0, 1, 1));
@@ -170,7 +170,7 @@ int main(void) {
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
         if(triangle.colliding){
-            myShader.SetVec3("colour", glm::vec3(1, 1, 1));
+            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
         else{
             myShader.SetVec3("colour", glm::vec3(1, 1, 0));
@@ -186,7 +186,7 @@ int main(void) {
         myShader.SetMat4("projection", projection);
         // collision!
         if(pentagon.colliding){
-            myShader.SetVec3("colour", glm::vec3(0, 0, 1));
+            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
         else{
             myShader.SetVec3("colour", glm::vec3(1, 0, 1));
