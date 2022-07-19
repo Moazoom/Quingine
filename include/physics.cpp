@@ -25,6 +25,7 @@ class physicsObject{
         physicsObject* pNext = nullptr;
         std::vector<glm::vec2> base; // set of base points (shape), will be transfomed through position and rotation for collisions
         std::vector<glm::vec2> collider; // transformed and rotated points will be stored here
+        bool colliding = false; // straightforward for once lol
 
         void AddForce(glm::vec2 force){
             resultantForce += force;
@@ -223,11 +224,27 @@ void UpdatePhysics(float deltaTime){
         pCurrent = (*pCurrent).pNext; // next physics object ggwp
     }
     
-    // then check for collisions
-    // if(GJK(*pStart, *(*pStart).pNext)) std::cout << "box v trig - ";
-    //std::cout << (*pStart).velocity.x << ", " << (*pStart).velocity.y << std::endl;
-    //if(!GJK(*pStart, *((*pStart).pNext))) std::cout << "not box v trig" << std::endl;
+    // then check for collisions, also haha pP
+    physicsObject* pPO1 = pStart; // first object
+    physicsObject* pPO2 = pStart; // second object
+    // loop first object
+    while(pPO1 != pEnd){
+        // loop second object
+        while(pPO2 != pEnd){
+            pPO2 = (*pPO2).pNext;
 
+            (*pPO1).colliding = false;
+            (*pPO2).colliding = false;
+
+            if(GJK(*pPO1, *pPO2)){
+                (*pPO1).colliding = true;
+                (*pPO2).colliding = true;
+            }
+        }
+        // update active objects to check
+        pPO1 = (*pPO1).pNext;
+        pPO2 = pPO1;
+    }
     // then update colliding objects
 }
 

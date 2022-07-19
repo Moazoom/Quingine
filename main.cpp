@@ -119,7 +119,8 @@ int main(void) {
 
         // 🅱️ysics
         UpdatePhysics(deltaTime);
-        bool hasCollided = GJK(*(*pStart).pNext, *pEnd);
+        // bool hasCollided = GJK(*pStart, *pEnd);
+        // std::cout << hasCollided << std::endl;
         triangle.rotation += 0.1;
 
        // looping
@@ -152,7 +153,12 @@ int main(void) {
         myShader.Use();
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        myShader.SetVec3("colour", glm::vec3(0, 1, 1));
+        if(box.colliding){
+            myShader.SetVec3("colour", glm::vec3(1, 0, 0));
+        }
+        else {
+            myShader.SetVec3("colour", glm::vec3(0, 1, 1));
+        }
         boxVAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -163,7 +169,7 @@ int main(void) {
         world = glm::rotate(world, glm::radians(triangle.rotation), glm::vec3(0, 0, 1));
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        if(hasCollided){
+        if(triangle.colliding){
             myShader.SetVec3("colour", glm::vec3(1, 1, 1));
         }
         else{
@@ -179,8 +185,8 @@ int main(void) {
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
         // collision!
-        if(hasCollided){
-            myShader.SetVec3("colour", glm::vec3(1, 0, 1));
+        if(pentagon.colliding){
+            myShader.SetVec3("colour", glm::vec3(0, 0, 1));
         }
         else{
             myShader.SetVec3("colour", glm::vec3(1, 0, 1));
