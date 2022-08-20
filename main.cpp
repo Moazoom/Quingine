@@ -119,9 +119,7 @@ int main(void) {
 
         // 🅱️ysics
         UpdatePhysics(deltaTime);
-        // bool hasCollided = GJK(*pStart, *pEnd);
-        // std::cout << hasCollided << std::endl;
-        triangle.rotation += 0.1;
+        //triangle.rotation += 0.1;
 
        // looping
         if(triangle.position.x > 25) triangle.position.x = -25;
