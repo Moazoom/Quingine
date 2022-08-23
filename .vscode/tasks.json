@@ -3,7 +3,7 @@
       {
         "type": "cppbuild",
         "label": "use this one idiot (local)",
-        "command": "F:/Mingw64/bin/g++.exe",
+        "command": "g++.exe",
         "args": [
           "${file}",
           "-o",
