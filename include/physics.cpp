@@ -268,7 +268,7 @@ glm::vec2 EPA(glm::vec2 A, glm::vec2 B, glm::vec2 C, physicsObject* PO1, physics
 
     glm::vec2 result = minNormal * (float)(minDistance + 0.01);
     std::cout << "resultant vector: " << result.x << " , " << result.y << std::endl;
-    return result; 
+    return result;
 }
 
 
@@ -312,7 +312,23 @@ void UpdatePhysics(float deltaTime){
                 float mTotal = (*pPO1).mass + (*pPO2).mass;
 
                 (*pPO1).position += -((*pPO2).mass / mTotal) * resultant;// half of the offset to this
-                (*pPO2).position += ((*pPO1).mass / mTotal) * resultant; // and half to the other, will use weights later
+                (*pPO2).position += ((*pPO1).mass / mTotal) * resultant; // and half to the other
+
+                // after offsetting, add forces to each object
+                // find "relative velocities"
+                glm::vec2 vel1 = (*pPO2).velocity - (*pPO1).velocity; // sus
+                glm::vec2 vel2 = (*pPO1).velocity - (*pPO2).velocity;
+
+                // use velocities to find forces
+                vel1 /= deltaTime; // getting acceleration
+                vel2 /= deltaTime;
+
+                glm::vec2 force1 = vel1 * (*pPO1).mass;
+                glm::vec2 force2 = vel2 * (*pPO2).mass;
+
+                // add forces to objects
+                (*pPO1).AddForce(force1);
+                (*pPO2).AddForce(force2);
             }
         }
         // update active objects to check

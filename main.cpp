@@ -8,6 +8,7 @@
 #include "buffers.h"
 #include "cubemap.h"
 #include "physics.cpp"
+#include <unistd.h>
 
 int WINW = 1280;
 int WINH = 720;
@@ -112,6 +113,9 @@ int main(void) {
         //🅱️elta tiem
         deltaTime = glfwGetTime() - lastFrame;
         lastFrame = glfwGetTime();
+        // 60 fps
+        std::cout << deltaTime << std::endl;
+        if(deltaTime < 0.01666666666) usleep((0.01666666666 - deltaTime) * 1000000);
 
         //in🅱️ut
         processInput(window); // gets input
