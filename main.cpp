@@ -18,61 +18,63 @@ float boxVertices[]{
     -1, 1, 0,
     1, 1, 0,
     1, -1, 0,
-    -1, -1, 0
-};
+    -1, -1, 0};
 
 int boxIndices[]{
     0, 2, 1,
-    0, 3, 2
-};
+    0, 3, 2};
 
 physicsObject box(glm::vec2(3, 3), 1, &boxVertices[0], 4);
 
-
 // a triangle
 float trigVertices[]{
-    -1, 1, 0,
-    1, 1, 0,
-    1, -1, 0,
+    -1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    -1,
+    0,
 };
 
 int trigIndices[]{
-    0, 2, 1
-};
+    0, 2, 1};
 
 physicsObject triangle(glm::vec2(0, 0), 0.5, &trigVertices[0], 3);
 
-
-
-float pentVertices[]{ // points go clockwise
-    1, 0, 0, // to de right
-    0.31, -0.95, 0, // bottom right
+float pentVertices[]{
+    // points go clockwise
+    1, 0, 0,         // to de right
+    0.31, -0.95, 0,  // bottom right
     -0.81, -0.59, 0, // bottom left
-    -0.81, 0.59, 0, // top left
-    0.31, 0.95, 0 // top right
+    -0.81, 0.59, 0,  // top left
+    0.31, 0.95, 0    // top right
 };
 
-int pentIndices[]{ // clockwise handedness
-    0, 1, 2,
-    0, 2, 3,
-    0, 3, 4
-};
+int pentIndices[]{// clockwise handedness
+                  0, 1, 2,
+                  0, 2, 3,
+                  0, 3, 4};
 
 physicsObject pentagon(glm::vec2(0, -3), 2, &pentVertices[0], 5);
 
-//prototypes suii
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
-GLFWwindow* GetWindow(void);
+// prototypes suii
+void framebuffer_size_callback(GLFWwindow *window, int width, int height);
+void processInput(GLFWwindow *window);
+GLFWwindow *GetWindow(void);
 
-//other
-float deltaTime = 0.0f;	// Time between current frame and last frame
+// other
+float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int main(void) {
-    //init oot of da wae
-    GLFWwindow* window = GetWindow();
-    if (window == NULL) return -1;
+int main(void)
+{
+    // init oot of da wae
+    GLFWwindow *window = GetWindow();
+    if (window == NULL)
+        return -1;
 
     // shaders
     Shader myShader("shaders/2d.vert", "shaders/2d.frag");
@@ -113,39 +115,49 @@ int main(void) {
         //🅱️elta tiem
         deltaTime = glfwGetTime() - lastFrame;
         lastFrame = glfwGetTime();
-        // 60 fps
-        std::cout << deltaTime << std::endl;
-        if(deltaTime < 0.01666666666) usleep((0.01666666666 - deltaTime) * 1000000);
 
-        //in🅱️ut
-        processInput(window); // gets input
+        // in🅱️ut
+        processInput(window);                    // gets input
         glfwGetWindowSize(window, &WINW, &WINH); // resizes window (if it happenes)
 
         // 🅱️ysics
         UpdatePhysics(deltaTime);
-        //triangle.rotation += 0.1;
+        float energy = (box.mass * glm::length(box.velocity) * glm::length(box.velocity)) + (triangle.mass * glm::length(triangle.velocity) * glm::length(triangle.velocity)) + (pentagon.mass * glm::length(pentagon.velocity) * glm::length(pentagon.velocity));
+        std::cout << "energy is " << energy << std::endl;
+        // triangle.rotation += 0.1;
 
-       // looping
-        if(triangle.position.x > 25) triangle.position.x = -25;
-        if(pentagon.position.x > 25) pentagon.position.x = -25;
-        if(box.position.x > 25) box.position.x = -25;
+        // looping
+        if (triangle.position.x > 25)
+            triangle.position.x = -25;
+        if (pentagon.position.x > 25)
+            pentagon.position.x = -25;
+        if (box.position.x > 25)
+            box.position.x = -25;
 
-        if(triangle.position.x < -25) triangle.position.x = 25;
-        if(pentagon.position.x < -25) pentagon.position.x = 25;
-        if(box.position.x < -25) box.position.x = 25;
+        if (triangle.position.x < -25)
+            triangle.position.x = 25;
+        if (pentagon.position.x < -25)
+            pentagon.position.x = 25;
+        if (box.position.x < -25)
+            box.position.x = 25;
 
+        if (triangle.position.y > 15)
+            triangle.position.y = -15;
+        if (pentagon.position.y > 15)
+            pentagon.position.y = -15;
+        if (box.position.y > 15)
+            box.position.y = -15;
 
-        if(triangle.position.y > 15) triangle.position.y = -15;
-        if(pentagon.position.y > 15) pentagon.position.y = -15;
-        if(box.position.y > 15) box.position.y = -15;
+        if (triangle.position.y < -15)
+            triangle.position.y = 15;
+        if (pentagon.position.y < -15)
+            pentagon.position.y = 15;
+        if (box.position.y < -15)
+            box.position.y = 15;
 
-        if(triangle.position.y < -15) triangle.position.y = 15;
-        if(pentagon.position.y < -15) pentagon.position.y = 15;
-        if(box.position.y < -15) box.position.y = 15;
-
-        //ren🅱️ering
+        // ren🅱️ering
         glClearColor(0.1, 0.1, 0.1, 1); // grey background
-        glClear(GL_COLOR_BUFFER_BIT); // clearing background
+        glClear(GL_COLOR_BUFFER_BIT);   // clearing background
 
         // resetting matricies
         glm::mat4 world = glm::mat4(1.0f); // update position in this
@@ -155,15 +167,16 @@ int main(void) {
         myShader.Use();
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        if(box.colliding){
+        if (box.colliding)
+        {
             myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
-        else {
+        else
+        {
             myShader.SetVec3("colour", glm::vec3(0, 1, 1));
         }
         boxVAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 
         // resetting matricies
         world = glm::mat4(1.0f); // update position in this
@@ -171,10 +184,12 @@ int main(void) {
         world = glm::rotate(world, glm::radians(triangle.rotation), glm::vec3(0, 0, 1));
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        if(triangle.colliding){
+        if (triangle.colliding)
+        {
             myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
-        else{
+        else
+        {
             myShader.SetVec3("colour", glm::vec3(1, 1, 0));
         }
         trigVAO.Bind();
@@ -187,65 +202,67 @@ int main(void) {
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
         // collision!
-        if(pentagon.colliding){
+        if (pentagon.colliding)
+        {
             myShader.SetVec3("colour", glm::vec3(0, 1, 0));
         }
-        else{
+        else
+        {
             myShader.SetVec3("colour", glm::vec3(1, 0, 1));
         }
         pentVAO.Bind();
         glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
-        //re🅱️resh
+        // re🅱️resh
         glfwSwapBuffers(window);
         glfwPollEvents();
     };
 
-    //deinit
+    // deinit
     glfwTerminate();
     return 0;
 }
 
-
-
-
-
-GLFWwindow* GetWindow(void) {
-    if (!glfwInit()) return NULL; //init lib
+GLFWwindow *GetWindow(void)
+{
+    if (!glfwInit())
+        return NULL; // init lib
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // hints for the window context idk
 
     // make the window
-    GLFWwindow* window = glfwCreateWindow(WINW, WINH, "say hello to deez nuts", NULL, NULL);;
+    GLFWwindow *window = glfwCreateWindow(WINW, WINH, "say hello to deez nuts", NULL, NULL);
+    ;
 
-    //error handling
-    if (!window) return NULL;
+    // error handling
+    if (!window)
+        return NULL;
 
     // ??? make the window context or smthn
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    //load up glad + error handling
+    // load up glad + error handling
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "glad error, i am not glad!" << std::endl;
         return NULL;
     }
 
-    //opengl isnt very bright
+    // opengl isnt very bright
     glViewport(0, 0, WINW, WINH);
 
     return window;
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void framebuffer_size_callback(GLFWwindow *window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, 1);
@@ -257,18 +274,30 @@ void processInput(GLFWwindow* window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // wireframe mode
 
     float speed = 5;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) box.AddForce(glm::vec2(0, 1) * speed);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) box.AddForce(glm::vec2(-1, 0) * speed);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) box.AddForce(glm::vec2(0, -1) * speed);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) box.AddForce(glm::vec2(1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        box.AddForce(glm::vec2(0, 1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        box.AddForce(glm::vec2(-1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        box.AddForce(glm::vec2(0, -1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        box.AddForce(glm::vec2(1, 0) * speed);
 
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) triangle.AddForce(glm::vec2(0, 1) * speed);
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) triangle.AddForce(glm::vec2(-1, 0) * speed);
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) triangle.AddForce(glm::vec2(0, -1) * speed);
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) triangle.AddForce(glm::vec2(1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        triangle.AddForce(glm::vec2(0, 1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        triangle.AddForce(glm::vec2(-1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        triangle.AddForce(glm::vec2(0, -1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        triangle.AddForce(glm::vec2(1, 0) * speed);
 
-    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS) pentagon.AddForce(glm::vec2(0, 1) * speed);
-    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) pentagon.AddForce(glm::vec2(-1, 0) * speed);
-    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS) pentagon.AddForce(glm::vec2(0, -1) * speed);
-    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS) pentagon.AddForce(glm::vec2(1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_U) == GLFW_PRESS)
+        pentagon.AddForce(glm::vec2(0, 1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS)
+        pentagon.AddForce(glm::vec2(-1, 0) * speed);
+    if (glfwGetKey(window, GLFW_KEY_J) == GLFW_PRESS)
+        pentagon.AddForce(glm::vec2(0, -1) * speed);
+    if (glfwGetKey(window, GLFW_KEY_K) == GLFW_PRESS)
+        pentagon.AddForce(glm::vec2(1, 0) * speed);
 }
