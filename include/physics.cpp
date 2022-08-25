@@ -353,13 +353,17 @@ void UpdatePhysics(float deltaTime)
 
                 angle = glm::dot(glm::vec2(0, 1), glm::normalize(resultant));
                 angle = acos(angle);
-                std::cout << "angle is " << angle << std::endl;
+                // std::cout << "angle is " << angle / 3.141 * 57.295 << std::endl;
 
                 (*pPO1).position += -((*pPO2).mass / mTotal) * resultant; // half of the offset to this
                 (*pPO2).position += ((*pPO1).mass / mTotal) * resultant;  // and half to the other
 
                 // after offsetting, add forces to each object
-                // find "relative velocities"
+                // in elastic collision, both objects exxentially swap kinetic energies
+                // Ek = 0.5 * mass * length(velocity) * length(velocity)
+                // also P0 = P1 ie momentum before is momentum after
+                // use absolute velocities
+                /*
                 glm::vec2 vel1 = (*pPO2).velocity - (*pPO1).velocity; // sus
                 glm::vec2 vel2 = (*pPO1).velocity - (*pPO2).velocity;
 
@@ -367,12 +371,31 @@ void UpdatePhysics(float deltaTime)
                 vel1 /= deltaTime; // getting acceleration
                 vel2 /= deltaTime;
 
-                glm::vec2 force1 = vel1 * (*pPO1).mass;
-                glm::vec2 force2 = vel2 * (*pPO2).mass;
+                glm::vec2 force1 = glm::vec2(((*pPO1).velocity.x / deltaTime) * (*pPO1).mass, 0);
+                glm::vec2 force2 = glm::vec2(((*pPO2).velocity.x / deltaTime) * (*pPO2).mass, 0);
 
-                // add forces to objects
-                (*pPO1).AddForce(-force2 * 1.0f);
-                (*pPO2).AddForce(-force1 * 1.0f);
+                // all collisisons are fully elastic, so transfer ALL energy over from one object to another
+                (*pPO1).AddForce(force2 * 1.0f);
+                (*pPO1).AddForce(-force1);
+                (*pPO2).AddForce(force1 * 1.0f);
+                (*pPO2).AddForce(-force2);
+                */
+
+                // changing velocies now, using kinetic energy
+                // only in the x axis
+                float Ek, scaler, temp;
+                // first obj 1s Ek to obj 2
+                Ek = (*pPO1).mass * glm::dot((*pPO1).velocity.x, (*pPO1).velocity.x);
+                scaler = sqrt(Ek / (*pPO2).mass);
+                temp = scaler;
+
+                // now object 2 to obj 1
+                Ek = (*pPO2).mass * glm::dot((*pPO2).velocity.x, (*pPO2).velocity.x);
+                scaler = sqrt(Ek / (*pPO1).mass);
+                
+                // use relative velocities to figure out which way the vel should be 
+                if(((*pPO2).velocity.x - (*pPO1).velocity.x) >= 0) (*pPO1).velocity.x = scaler; else (*pPO1).velocity.x = -scaler;
+                if(((*pPO1).velocity.x - (*pPO2).velocity.x) >= 0) (*pPO2).velocity.x = temp; else (*pPO2).velocity.x = -temp;
             }
         }
         // update active objects to check

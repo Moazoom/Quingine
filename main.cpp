@@ -42,7 +42,7 @@ float trigVertices[]{
 int trigIndices[]{
     0, 2, 1};
 
-physicsObject triangle(glm::vec2(0, 0), 0.5, &trigVertices[0], 3);
+physicsObject triangle(glm::vec2(0, 2.9), 0.5, &trigVertices[0], 3);
 
 float pentVertices[]{
     // points go clockwise
@@ -123,7 +123,7 @@ int main(void)
 
         // 🅱️ysics
         UpdatePhysics(deltaTime);
-        float energy = (box.mass * glm::length(box.velocity) * glm::length(box.velocity)) + (triangle.mass * glm::length(triangle.velocity) * glm::length(triangle.velocity)) + (pentagon.mass * glm::length(pentagon.velocity) * glm::length(pentagon.velocity));
+        float energy = 0.5f * ((box.mass * glm::dot(box.velocity, box.velocity)) + (triangle.mass * glm::dot(triangle.velocity, triangle.velocity)) + (pentagon.mass * glm::dot(pentagon.velocity, pentagon.velocity)));
         std::cout << "energy is " << energy << std::endl;
         // triangle.rotation += 0.1;
 
