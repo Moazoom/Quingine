@@ -54,9 +54,10 @@ float pentVertices[]{
 };
 
 int pentIndices[]{// clockwise handedness
-                  0, 1, 2,
-                  0, 2, 3,
-                  0, 3, 4};
+    0, 1, 2,
+    0, 2, 3,
+    0, 3, 4
+};
 
 physicsObject pentagon(glm::vec2(0, -3), 2, &pentVertices[0], 5);
 
