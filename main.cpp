@@ -124,7 +124,7 @@ int main(void)
         // 🅱️ysics
         UpdatePhysics(deltaTime);
         float energy = 0.5f * ((box.mass * glm::dot(box.velocity, box.velocity)) + (triangle.mass * glm::dot(triangle.velocity, triangle.velocity)) + (pentagon.mass * glm::dot(pentagon.velocity, pentagon.velocity)));
-        std::cout << "energy is " << energy << std::endl;
+        // std::cout << "energy is " << energy << std::endl;
         // triangle.rotation += 0.1;
 
         // looping
