@@ -381,27 +381,16 @@ void UpdatePhysics(float deltaTime)
                 (*pPO2).AddForce(-force2);
                 */
 
-                // changing velocies now, using kinetic energy
-                // only in the x axis
-                float Ek, scaler, temp;
-                bool flag;
-                // first obj 1s Ek to obj 2
-                Ek = (*pPO1).mass * glm::dot((*pPO1).velocity.x, (*pPO1).velocity.x);
-                scaler = sqrt(Ek / (*pPO2).mass);
-                temp = scaler;
+                // changing velocies now, using momentum
+                float vel1, vel2;
 
-                // now object 2 to obj 1
-                Ek = (*pPO2).mass * glm::dot((*pPO2).velocity.x, (*pPO2).velocity.x);
-                scaler = sqrt(Ek / (*pPO1).mass);
+                vel1 = ((*pPO2).velocity.x * (*pPO2).mass) / (*pPO1).mass; // momentum of PO2 / mass of PO1 = velocity of PO1!
+                vel2 = ((*pPO1).velocity.x * (*pPO1).mass) / (*pPO2).mass;
                 
-                if(abs((*pPO1).velocity.x + (*pPO2).velocity.x) == (abs((*pPO1).velocity.x) + abs((*pPO2).velocity.x))) std::cout << "opposed ";
-                else std::cout << "same ";
-                std::cout << abs((*pPO1).velocity.x + (*pPO2).velocity.x) << " and abs is " << abs((*pPO1).velocity.x) + abs((*pPO2).velocity.x) << std::endl;
+                (*pPO1).velocity.x = vel1;
+                (*pPO2).velocity.x = vel2;
 
-                // use relative velocities to figure out which way the vel should be
-                flag = (((*pPO2).velocity.x - (*pPO1).velocity.x) >= 0);
-                if(((*pPO1).velocity.x - (*pPO2).velocity.x) >= 0) (*pPO2).velocity.x = temp; else (*pPO2).velocity.x = -temp;
-                if(flag) (*pPO1).velocity.x = scaler; else (*pPO1).velocity.x = -scaler;
+                std::cout << "vel1 is " << vel1 << " and vel2 is " << vel2 << std::endl;
             }
         }
         // update active objects to check
