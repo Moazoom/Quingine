@@ -381,16 +381,17 @@ void UpdatePhysics(float deltaTime)
                 (*pPO2).AddForce(-force2);
                 */
 
-                // changing velocies now, using momentum
-                float vel1, vel2;
+                // finding impulse using crazy black box equasion
+                float impulse;
+                glm ::vec2 normal = glm::normalize(resultant);
+                glm::vec2 Vab = (*pPO1).velocity - (*pPO2).velocity;
+                float elasticity = 1;
 
-                vel1 = ((*pPO2).velocity.x * (*pPO2).mass) / (*pPO1).mass; // momentum of PO2 / mass of PO1 = velocity of PO1!
-                vel2 = ((*pPO1).velocity.x * (*pPO1).mass) / (*pPO2).mass;
-                
-                (*pPO1).velocity.x = vel1;
-                (*pPO2).velocity.x = vel2;
+                impulse = glm::dot(-(1+elasticity) * Vab, normal);
+                impulse /= glm::dot(normal, normal * ((1/(*pPO1).mass) + (1/(*pPO2).mass)));
 
-                std::cout << "vel1 is " << vel1 << " and vel2 is " << vel2 << std::endl;
+                (*pPO1).velocity += (impulse * normal) / (*pPO1).mass;
+                (*pPO2).velocity -= (impulse * normal) / (*pPO2).mass;
             }
         }
         // update active objects to check
