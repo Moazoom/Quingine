@@ -19,31 +19,21 @@ float boxVertices[]{
     1, 1, 0,
     1, -1, 0,
     -1, -1, 0};
-
 int boxIndices[]{
     0, 2, 1,
     0, 3, 2};
-
 physicsObject box(glm::vec2(3, 3), 1, &boxVertices[0], 4);
 
 // a triangle
 float trigVertices[]{
-    -1,
-    1,
-    0,
-    1,
-    1,
-    0,
-    1,
-    -1,
-    0,
-};
-
+    -1, 1, 0,
+    1, 1, 0,
+    1,-1, 0};
 int trigIndices[]{
     0, 2, 1};
-
 physicsObject triangle(glm::vec2(0, 2.9), 0.5, &trigVertices[0], 3);
 
+// a pentagon
 float pentVertices[]{
     // points go clockwise
     1, 0, 0,         // to de right
@@ -52,14 +42,12 @@ float pentVertices[]{
     -0.81, 0.59, 0,  // top left
     0.31, 0.95, 0    // top right
 };
-
 int pentIndices[]{// clockwise handedness
     0, 1, 2,
     0, 2, 3,
     0, 3, 4
 };
-
-physicsObject pentagon(glm::vec2(0, -3), 2, &pentVertices[0], 5);
+physicsObject pentagon(glm::vec2(0, -3), 0.75, &pentVertices[0], 5);
 
 // prototypes suii
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -70,12 +58,10 @@ GLFWwindow *GetWindow(void);
 float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
-int main(void)
-{
+int main(void){
     // init oot of da wae
     GLFWwindow *window = GetWindow();
-    if (window == NULL)
-        return -1;
+    if (window == NULL) return -1;
 
     // shaders
     Shader myShader("shaders/2d.vert", "shaders/2d.frag");
@@ -125,42 +111,29 @@ int main(void)
         UpdatePhysics(deltaTime);
         float energy = 0.5f * ((box.mass * glm::dot(box.velocity, box.velocity)) + (triangle.mass * glm::dot(triangle.velocity, triangle.velocity)) + (pentagon.mass * glm::dot(pentagon.velocity, pentagon.velocity)));
         std::cout << "energy is " << energy << std::endl;
-        // triangle.rotation += 0.1;
 
         // looping
-        if (triangle.position.x > 25)
-            triangle.position.x = -25;
-        if (pentagon.position.x > 25)
-            pentagon.position.x = -25;
-        if (box.position.x > 25)
-            box.position.x = -25;
+        if (triangle.position.x > 25) triangle.position.x = -25;
+        if (pentagon.position.x > 25) pentagon.position.x = -25;
+        if (box.position.x > 25) box.position.x = -25;
 
-        if (triangle.position.x < -25)
-            triangle.position.x = 25;
-        if (pentagon.position.x < -25)
-            pentagon.position.x = 25;
-        if (box.position.x < -25)
-            box.position.x = 25;
+        if (triangle.position.x < -25) triangle.position.x = 25;
+        if (pentagon.position.x < -25) pentagon.position.x = 25;
+        if (box.position.x < -25) box.position.x = 25;
 
-        if (triangle.position.y > 15)
-            triangle.position.y = -15;
-        if (pentagon.position.y > 15)
-            pentagon.position.y = -15;
-        if (box.position.y > 15)
-            box.position.y = -15;
+        if (triangle.position.y > 15) triangle.position.y = -15;
+        if (pentagon.position.y > 15) pentagon.position.y = -15;
+        if (box.position.y > 15) box.position.y = -15;
 
-        if (triangle.position.y < -15)
-            triangle.position.y = 15;
-        if (pentagon.position.y < -15)
-            pentagon.position.y = 15;
-        if (box.position.y < -15)
-            box.position.y = 15;
+        if (triangle.position.y < -15) triangle.position.y = 15;
+        if (pentagon.position.y < -15) pentagon.position.y = 15;
+        if (box.position.y < -15) box.position.y = 15;
 
         // ren🅱️ering
         glClearColor(0.1, 0.1, 0.1, 1); // grey background
         glClear(GL_COLOR_BUFFER_BIT);   // clearing background
 
-        // resetting matricies
+        // making matricies
         glm::mat4 world = glm::mat4(1.0f); // update position in this
         world = glm::translate(world, glm::vec3(box.position, 0));
         glm::mat4 projection = glm::mat4(1.0f);
@@ -168,14 +141,8 @@ int main(void)
         myShader.Use();
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        if (box.colliding)
-        {
-            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
-        }
-        else
-        {
-            myShader.SetVec3("colour", glm::vec3(0, 1, 1));
-        }
+        if (box.colliding) myShader.SetVec3("colour", glm::vec3(0, 1, 0));
+        else myShader.SetVec3("colour", glm::vec3(0, 1, 1));
         boxVAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -185,14 +152,8 @@ int main(void)
         world = glm::rotate(world, glm::radians(triangle.rotation), glm::vec3(0, 0, 1));
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        if (triangle.colliding)
-        {
-            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
-        }
-        else
-        {
-            myShader.SetVec3("colour", glm::vec3(1, 1, 0));
-        }
+        if (triangle.colliding) myShader.SetVec3("colour", glm::vec3(0, 1, 0));
+        else myShader.SetVec3("colour", glm::vec3(1, 1, 0));
         trigVAO.Bind();
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
@@ -202,15 +163,8 @@ int main(void)
         world = glm::rotate(world, glm::radians(pentagon.rotation), glm::vec3(0, 0, 1));
         myShader.SetMat4("world", world);
         myShader.SetMat4("projection", projection);
-        // collision!
-        if (pentagon.colliding)
-        {
-            myShader.SetVec3("colour", glm::vec3(0, 1, 0));
-        }
-        else
-        {
-            myShader.SetVec3("colour", glm::vec3(1, 0, 1));
-        }
+        if (pentagon.colliding) myShader.SetVec3("colour", glm::vec3(0, 1, 0));
+        else myShader.SetVec3("colour", glm::vec3(1, 0, 1));
         pentVAO.Bind();
         glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
