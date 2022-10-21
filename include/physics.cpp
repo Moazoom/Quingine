@@ -16,6 +16,7 @@
 #include "glm/gtx/matrix_transform_2d.hpp"
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 class physicsObject{
 public:
@@ -25,6 +26,7 @@ public:
     std::vector<glm::vec2> base;     // set of base points (shape), will be transfomed through position and rotation for collisions
     std::vector<glm::vec2> collider; // transformed and rotated points will be stored here
     bool colliding = false;          // only for changing colour
+    
 
     // adds a force, pretty simple like all good things should be
     void AddForce(glm::vec2 force){
@@ -249,6 +251,9 @@ glm::vec2 EPA(glm::vec2 A, glm::vec2 B, glm::vec2 C, physicsObject *PO1, physics
     glm::vec2 result = minNormal * (float)(minDistance + 0.01);
     return result;
 }
+
+// points for debugging
+std::vector<glm::vec2> points = {glm::vec2(0, 0)};
 
 // takes our physics objects, loops through, applies forces, and updates positions / rotations
 void UpdatePhysics(float deltaTime){

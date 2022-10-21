@@ -168,6 +168,22 @@ int main(void){
         pentVAO.Bind();
         glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
+        // drawing a point thats for debugging, probably slow af
+        for(unsigned int i = 0; i < points.size(); i++){
+            float pointsList[] = {
+                points[i].x, points[i].y, 0.0f
+            };
+            VBO pointsVBO(pointsList, sizeof(pointsList));
+            pointsVBO.Bind();
+            glEnable(GL_PROGRAM_POINT_SIZE);
+            world = glm::mat4(1.0f);
+            world = glm::translate(world, glm::vec3(points[i], 0));
+            myShader.SetMat4("world", world);
+            myShader.SetMat4("projection", projection);
+            myShader.SetVec3("colour", glm::vec3(1, 0, 0));
+            glDrawArrays(GL_POINTS, 0, 1);
+        };
+
         // re🅱️resh
         glfwSwapBuffers(window);
         glfwPollEvents();
