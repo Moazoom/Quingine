@@ -184,6 +184,7 @@ int main(void){
             glDrawArrays(GL_POINTS, 0, 1);
         };
 
+        std::cout << -1 % 10 << std::endl;
         // re🅱️resh
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -209,6 +209,7 @@ glm::vec2 findNormalToOrigin(glm::vec2 A, glm::vec2 B){
 }
 
 // EPA algorythm!! very nice
+// normal returned goes from po1 to po2
 glm::vec2 EPA(glm::vec2 A, glm::vec2 B, glm::vec2 C, physicsObject *PO1, physicsObject *PO2){
     std::vector<glm::vec2> polytope = {A, B, C}; // hopefully correct handedness
 
@@ -252,8 +253,101 @@ glm::vec2 EPA(glm::vec2 A, glm::vec2 B, glm::vec2 C, physicsObject *PO1, physics
     return result;
 }
 
+// clipping algorythm for utility, returns a point
+// uses clockwise handedness for ref line
+glm::vec2 Clip(glm::vec2 point1, glm::vec2 point2, glm::vec2 ref){
+    bool inside1, inside2;
+    if()
+    // both points inside
+
+    // one inside, one outside, return intersection
+
+    // both outside, return (0, 0)
+}
+
+// algorythm for finding point(s) of intersect: uses Sutherland-Hodgman Clipping
+// takes clockwise handedness, be careful!
+std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *PO2, glm::vec2 normal){
+    // 1. first find best points
+
+    // get the largest dot product of first collider
+    float temp = 0;
+    float biggest = glm::dot(normal, PO1->collider[0]);
+    int index1, index2 = 0;
+    glm::vec2 point1 = PO1->collider[0];
+    for (unsigned int i = 0; i < size(PO1->collider); i++){
+        temp = glm::dot(normal, PO1->collider[i]);
+        if (biggest < temp){
+            biggest = temp;
+            point1 = PO1->collider[i];
+            index1 = i;
+        }
+    }
+
+    // now second collider
+    temp = 0;
+    biggest = glm::dot(-normal, PO2->collider[0]);
+    glm::vec2 point2 = PO2->collider[0];
+    for (unsigned int i = 0; i < size(PO2->collider); i++){
+        temp = glm::dot(-normal, PO2->collider[i]);
+        if (biggest < temp){
+            biggest = temp;
+            point2 = PO2->collider[i];
+            index2 = i;
+        }
+    }
+
+    // 2. then best faces: flip x and y, negate x and thats the normal <- could break
+    //TODO: fix this shi!!!
+
+    // face from PO1
+    int index = index1 - 1;
+    if(index1 == 0) index = sizeof(PO1->collider) / sizeof(PO1->collider[0]);
+    glm::vec2 face1 = PO1->collider[index1] - PO1->collider[index];
+    biggest = glm::dot(glm::vec2(-face1.y, face1.x), normal);
+
+    index = index1 + 1;
+    if(index1 == (sizeof(PO1->collider) / sizeof(PO1->collider[0]))) index = 0;
+    face1 = PO1->collider[index1] - PO1->collider[index];
+
+    if(glm::dot(glm::vec2(-face1.y, face1.x), normal) < biggest){
+        index = index1 - 1;
+        if(index1 == 0) index = sizeof(PO1->collider) / sizeof(PO1->collider[0]);
+        face1 = PO1->collider[index1] - PO1->collider[index];
+    }
+
+    // face from PO2
+    index = index2 - 1;
+    if(index2 == 0) index = sizeof(PO2->collider) / sizeof(PO2->collider[0]);
+    glm::vec2 face2 = PO2->collider[index2] - PO2->collider[index];
+    biggest = glm::dot(glm::vec2(-face1.y, face1.x), -normal);
+
+    index = index2 + 1;
+    if(index2 == (sizeof(PO2->collider) / sizeof(PO2->collider[0]))) index = 0;
+    face2 = PO2->collider[index2] - PO2->collider[index];
+
+    if(glm::dot(glm::vec2(-face1.y, face1.x), -normal) < biggest){
+        index = index2 - 1;
+        if(index2 == 0) index = sizeof(PO2->collider) / sizeof(PO2->collider[0]);
+        face2 = PO2->collider[index2] - PO2->collider[index];
+    }
+
+    // 3. then sort faces
+    glm::vec2 inc, ref;
+    if(glm::dot(glm::vec2(-face1.y, face1.x), normal) > glm::dot(glm::vec2(-face1.y, face1.x), -normal)){
+        ref = face1;
+        inc = face2;
+    }
+    else{
+        ref = face2;
+        inc = face1;
+    }
+
+    // 4. then clip!
+}
+
 // points for debugging
-std::vector<glm::vec2> points = {glm::vec2(0, 0)};
+std::vector<glm::vec2> points = {};
 
 // takes our physics objects, loops through, applies forces, and updates positions / rotations
 void UpdatePhysics(float deltaTime){
@@ -288,7 +382,7 @@ void UpdatePhysics(float deltaTime){
         while (pPO2 != pEnd){
             pPO2 = (*pPO2).pNext;
             resultant = glm::vec2(0);
-            GJK(pPO1, pPO2, &resultant);
+            GJK(pPO1, pPO2, &resultant); // big physics engine call!!
             // if collide
             if (resultant != glm::vec2(0)){
                 // raw position solver
