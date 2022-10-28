@@ -255,14 +255,31 @@ glm::vec2 EPA(glm::vec2 A, glm::vec2 B, glm::vec2 C, physicsObject *PO1, physics
 
 // clipping algorythm for utility, returns a point
 // uses clockwise handedness for ref line
-glm::vec2 Clip(glm::vec2 point1, glm::vec2 point2, glm::vec2 ref){
+glm::vec2 Clip(glm::vec2 point1, glm::vec2 point2, glm::vec2 ref1, glm::vec2 ref2){
     bool inside1, inside2;
-    if()
+
+    if((ref2.x-ref1.x)*(point1.y-ref1.y) - (ref2.y-ref1.y)*(point1.x-ref1.x) > 0) inside1 = false;
+    else inside1 = true;
+
+    if((ref2.x-ref1.x)*(point2.y-ref1.y) - (ref2.y-ref1.y)*(point2.x-ref1.x) > 0) inside2 = false;
+    else inside2 = true;
+
     // both points inside
+    if(inside1 && inside2) return point2;
 
     // one inside, one outside, return intersection
+    if((inside1 && !inside2) || (!inside1 && inside2)){
+        float x = ((point1.x*point2.y)-(point1.y*point2.x))*(ref1.x-ref2.x) - (point1.x-point2.x)*((ref1.x*ref2.y)-(ref1.y*ref2.x));
+        x /= ((point1.x-point2.x)*(ref1.y-ref2.y) - (point1.y-point2.y)*(ref1.x-ref2.x));
 
-    // both outside, return (0, 0)
+        float y = ((point1.x*point2.y)-(point1.y*point2.x))*(ref1.y-ref2.y) - (point1.y-point2.y)*((ref1.x*ref2.y)-(ref1.y*ref2.x));
+        y /= ((point1.x-point2.x)*(ref1.y-ref2.y) - (point1.y-point2.y)*(ref1.x-ref2.x));
+
+        return glm::vec2(x, y);
+    }
+
+    // both outside, return (0, 0) <- not best solution...
+    return glm::vec2(0, 0);
 }
 
 // algorythm for finding point(s) of intersect: uses Sutherland-Hodgman Clipping
@@ -273,9 +290,10 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
     // get the largest dot product of first collider
     float temp = 0;
     float biggest = glm::dot(normal, PO1->collider[0]);
-    int index1, index2 = 0;
+    int index1 = 0;
+    int index2 = 0;
     glm::vec2 point1 = PO1->collider[0];
-    for (unsigned int i = 0; i < size(PO1->collider); i++){
+    for (unsigned int i = 0; i < PO1->collider.size(); i++){
         temp = glm::dot(normal, PO1->collider[i]);
         if (biggest < temp){
             biggest = temp;
@@ -288,7 +306,7 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
     temp = 0;
     biggest = glm::dot(-normal, PO2->collider[0]);
     glm::vec2 point2 = PO2->collider[0];
-    for (unsigned int i = 0; i < size(PO2->collider); i++){
+    for (unsigned int i = 0; i < PO2->collider.size(); i++){
         temp = glm::dot(-normal, PO2->collider[i]);
         if (biggest < temp){
             biggest = temp;
@@ -296,58 +314,133 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
             index2 = i;
         }
     }
-
+    
     // 2. then best faces: flip x and y, negate x and thats the normal <- could break
     //TODO: fix this shi!!!
 
     // face from PO1
+    bool plus1 = true;
     int index = index1 - 1;
-    if(index1 == 0) index = sizeof(PO1->collider) / sizeof(PO1->collider[0]);
-    glm::vec2 face1 = PO1->collider[index1] - PO1->collider[index];
-    biggest = glm::dot(glm::vec2(-face1.y, face1.x), normal);
+    if(index < 0) index += PO1->collider.size();
+    glm::vec2 face1A, face1B; // B is clockwise to A
+    std::cout << "got this far.. " << index << " " << index1;
+    face1A = PO1->collider[index];
+    std::cout << " what abt this?" << std::endl;
+    face1B = PO1->collider[index1];
+    biggest = glm::dot(glm::vec2(-(face1B.y - face1A.y), face1B.x - face1A.x), normal);
 
     index = index1 + 1;
-    if(index1 == (sizeof(PO1->collider) / sizeof(PO1->collider[0]))) index = 0;
-    face1 = PO1->collider[index1] - PO1->collider[index];
+    if(index > PO1->collider.size()) index = 0;
+    face1A = PO1->collider[index1];
+    face1B = PO1->collider[index];
 
-    if(glm::dot(glm::vec2(-face1.y, face1.x), normal) < biggest){
+    if(glm::dot(glm::vec2(-(face1B.y - face1A.y), face1B.x - face1A.x), normal) < biggest){
         index = index1 - 1;
-        if(index1 == 0) index = sizeof(PO1->collider) / sizeof(PO1->collider[0]);
-        face1 = PO1->collider[index1] - PO1->collider[index];
+        if(index1 < 0) index += PO1->collider.size();
+        face1A = PO1->collider[index];
+        face1B = PO1->collider[index1];
+        plus1 = false;
     }
 
     // face from PO2
+    bool plus2 = true;
     index = index2 - 1;
-    if(index2 == 0) index = sizeof(PO2->collider) / sizeof(PO2->collider[0]);
-    glm::vec2 face2 = PO2->collider[index2] - PO2->collider[index];
-    biggest = glm::dot(glm::vec2(-face1.y, face1.x), -normal);
+    if(index < 0) index += PO2->collider.size();
+    glm::vec2 face2A, face2B; // B is clockwise to A
+    face2A = PO2->collider[index];
+    face2B = PO2->collider[index2];
+    biggest = glm::dot(glm::vec2(-(face2B.y - face2A.y), face2B.x - face2A.x), -normal);
 
     index = index2 + 1;
-    if(index2 == (sizeof(PO2->collider) / sizeof(PO2->collider[0]))) index = 0;
-    face2 = PO2->collider[index2] - PO2->collider[index];
+    if(index > (PO2->collider.size())) index = 0;
+    face2A = PO2->collider[index2];
+    face2B = PO2->collider[index];
 
-    if(glm::dot(glm::vec2(-face1.y, face1.x), -normal) < biggest){
+    if(glm::dot(glm::vec2(-(face2B.y - face2A.y), face2B.x - face2A.x), -normal) < biggest){
         index = index2 - 1;
-        if(index2 == 0) index = sizeof(PO2->collider) / sizeof(PO2->collider[0]);
-        face2 = PO2->collider[index2] - PO2->collider[index];
+        if(index < 0) index += PO2->collider.size();
+        face2A = PO2->collider[index];
+        face2B = PO2->collider[index2];
+        plus2 = false;
     }
 
-    // 3. then sort faces
-    glm::vec2 inc, ref;
-    if(glm::dot(glm::vec2(-face1.y, face1.x), normal) > glm::dot(glm::vec2(-face1.y, face1.x), -normal)){
-        ref = face1;
-        inc = face2;
+    // 3. then sort faces, also getting adjacent ref faces for clipping
+    glm::vec2 incA, incB, refA, refB, ref0, ref2; // again, B is clockwise to A; 0 and 2 are used for clipping
+    if(glm::dot(glm::vec2(-(face1B.y - face1A.y), face1B.x - face1A.x), normal) > glm::dot(glm::vec2(-(face2B.y - face2A.y), face2B.x - face2A.x), -normal)){
+        normal /= 2.0f;
+        refA = face1A;
+        refB = face1B;
+        incA = face2A;
+        incB = face2B;
+        // getting adjacent faces for clipping
+        if(plus1){
+            // then face1A is at index1, and face1B is at index1 + 1 nice
+            index = index1 - 1;
+            if(index < 0) index += PO1->collider.size();
+            ref0 = PO1->collider[index];
+
+            index = index1 + 2;
+            if(index > PO1->collider.size()) index -= PO1->collider.size();
+            ref2 = PO1->collider[index];
+        }
+        else{
+            // if were here, then face1B is at index1
+            index = index1 - 2;
+            if(index < 0) index += PO1->collider.size();
+            ref0 = PO1->collider[index];
+
+            index = index1 + 1;
+            if(index > PO1->collider.size()) index -= PO1->collider.size();
+            ref2 = PO1->collider[index];
+        }
     }
     else{
-        ref = face2;
-        inc = face1;
+        normal /= -2.0f;
+        refA = face2A;
+        refB = face2B;
+        incA = face1A;
+        incB = face2B;
+        // getting adjacent faces for clipping
+        if(plus2){
+            // then face2A is at index2, and face2B is at index2 + 1 nice
+            index = index2 - 1;
+            if(index < 0) index += PO2->collider.size();
+            ref0 = PO2->collider[index];
+
+            index = index2 + 2;
+            if(index > PO2->collider.size()) index -= PO2->collider.size();
+            ref2 = PO2->collider[index];
+        }
+        else{
+            // if were here, then face2B is at index2
+            index = index2 - 2;
+            if(index < 0) index += PO2->collider.size();
+            ref0 = PO2->collider[index];
+
+            index = index2 + 1;
+            if(index > PO2->collider.size()) index -= PO2->collider.size();
+            ref2 = PO2->collider[index];
+        }
     }
 
     // 4. then clip!
+
+    // only need 3 function calls
+    std::vector<glm::vec2> list = {glm::vec2(0)};
+    // to da anticlockwise
+    list.push_back(Clip(incA, incB, ref0, refA) + normal);
+    // to da clockwise
+    list.push_back(Clip(incA, incB, refB, ref2) + normal);
+    // final ref face, itself!
+    list.push_back(Clip(incA, incB, refA, refB) + normal);
+
+    // need to offset points to find true intersection point
+
+    return list; // ggez?
 }
 
 // points for debugging
-std::vector<glm::vec2> points = {};
+std::vector<glm::vec2> points = {glm::vec2(0)};
 
 // takes our physics objects, loops through, applies forces, and updates positions / rotations
 void UpdatePhysics(float deltaTime){
@@ -385,9 +478,12 @@ void UpdatePhysics(float deltaTime){
             GJK(pPO1, pPO2, &resultant); // big physics engine call!!
             // if collide
             if (resultant != glm::vec2(0)){
+                // intersection finder??
+                points = FindCollisionManifold(pPO1, pPO2, resultant);
+
                 // raw position solver
-                (*pPO1).position -= resultant / 2.0f; // half of the offset to this
-                (*pPO2).position += resultant / 2.0f;  // and half to the other
+                // (*pPO1).position -= resultant / 2.0f; // half of the offset to this
+                // (*pPO2).position += resultant / 2.0f;  // and half to the other
 
                 // impulse solver using crazy black box equasion
                 // quite elegant if i do say so myself
@@ -399,8 +495,8 @@ void UpdatePhysics(float deltaTime){
                 impulse = glm::dot(-(1 + elasticity) * Vab, normal);
                 impulse /= glm::dot(normal, normal * ((1 / (*pPO1).mass) + (1 / (*pPO2).mass)));
 
-                (*pPO1).velocity += (impulse * normal) / (*pPO1).mass;
-                (*pPO2).velocity -= (impulse * normal) / (*pPO2).mass;
+                // (*pPO1).velocity += (impulse * normal) / (*pPO1).mass;
+                // (*pPO2).velocity -= (impulse * normal) / (*pPO2).mass;
             }
         }
         // update to next active objects to check

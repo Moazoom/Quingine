@@ -59,6 +59,7 @@ float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 int main(void){
+    triangle.velocity.x = 0.25;
     // init oot of da wae
     GLFWwindow *window = GetWindow();
     if (window == NULL) return -1;
@@ -110,7 +111,7 @@ int main(void){
         // 🅱️ysics
         UpdatePhysics(deltaTime);
         float energy = 0.5f * ((box.mass * glm::dot(box.velocity, box.velocity)) + (triangle.mass * glm::dot(triangle.velocity, triangle.velocity)) + (pentagon.mass * glm::dot(pentagon.velocity, pentagon.velocity)));
-        std::cout << "energy is " << energy << std::endl;
+        // std::cout << "energy is " << energy << std::endl;
 
         // looping
         if (triangle.position.x > 25) triangle.position.x = -25;
@@ -184,7 +185,6 @@ int main(void){
             glDrawArrays(GL_POINTS, 0, 1);
         };
 
-        std::cout << -1 % 10 << std::endl;
         // re🅱️resh
         glfwSwapBuffers(window);
         glfwPollEvents();
