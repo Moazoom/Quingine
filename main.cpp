@@ -31,7 +31,7 @@ float trigVertices[]{
     1,-1, 0};
 int trigIndices[]{
     0, 2, 1};
-physicsObject triangle(glm::vec2(0, 2.9), 0.5, &trigVertices[0], 3);
+physicsObject triangle(glm::vec2(1, -1), 0.5, &trigVertices[0], 3);
 
 // a pentagon
 float pentVertices[]{
@@ -59,7 +59,6 @@ float deltaTime = 0.0f; // Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 int main(void){
-    triangle.velocity.x = 0.25;
     // init oot of da wae
     GLFWwindow *window = GetWindow();
     if (window == NULL) return -1;
@@ -184,6 +183,45 @@ int main(void){
             myShader.SetVec3("colour", glm::vec3(1, 0, 0));
             glDrawArrays(GL_POINTS, 0, 1);
         };
+
+        // yeah..
+        debug = {};
+        debug.push_back(glm::vec2(trigVertices[0], trigVertices[1]));
+        debug.push_back(triangle.collider[0]);
+
+        // std::cout << "trig top left:" << triangle.collider[0].x << ", " << triangle.collider[0].y << std::endl;
+        // std::cout << "float list ye:" << trigVertices[0] << ", " << trigVertices[1] << std::endl; 
+        for(unsigned int i = 0; i < debug.size(); i++){
+            float debugList[] = {
+                0.0f, 0.0f, 0.0f
+            };
+            VBO debugVBO(debugList, sizeof(debugList));
+            debugVBO.Bind();
+            glEnable(GL_PROGRAM_POINT_SIZE);
+            world = glm::mat4(1.0f);
+            world = glm::translate(world, glm::vec3(debug[i], 0));
+            myShader.SetMat4("world", world);
+            myShader.SetMat4("projection", projection);
+            myShader.SetVec3("colour", glm::vec3(0, 0, 1));
+            glDrawArrays(GL_POINTS, 0, 1);
+        };
+
+        // drawing origin
+        Shader origShader("shaders/orig.vert", "shaders/orig.frag");
+        origShader.Use();
+        world = glm::mat4(1.0f);
+        origShader.SetMat4("world", world);
+        origShader.SetMat4("projection", projection);
+        float origin[] = {
+            0.0f, 0.0f, 0.0f
+        };
+        VBO origVBO(origin, sizeof(origin));
+        VAO origVAO;
+        origVAO.LinkVBO(origVBO, 0, 3, 3, 0);
+        origVAO.Bind();
+        glEnable(GL_PROGRAM_POINT_SIZE);
+        glDrawArrays(GL_POINTS, 0, 1);
+
 
         // re🅱️resh
         glfwSwapBuffers(window);

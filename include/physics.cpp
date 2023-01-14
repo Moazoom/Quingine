@@ -59,6 +59,9 @@ physicsObject *pStart = nullptr;
 physicsObject *pEnd = nullptr;
 int sizeOfPhysicsWorld; // assumes no objects are deleted
 
+// yeah
+std::vector<glm::vec2> debug;
+
 physicsObject::physicsObject(glm::vec2 iposition, float imass, float *array, int size){
     position = iposition;
     mass = imass;
@@ -183,8 +186,8 @@ bool GJK(physicsObject *PO1, physicsObject *PO2, glm::vec2 *resultant){
         region = TriangleCase(A, B, C, &direction);
     }
 
-    //(*PO1).colliding = true;
-    //(*PO2).colliding = true;
+    (*PO1).colliding = true;
+    (*PO2).colliding = true;
 
     // if loop breaks, there was a collision!
     *resultant = EPA(A, B, C, PO1, PO2);
@@ -253,6 +256,16 @@ glm::vec2 EPA(glm::vec2 A, glm::vec2 B, glm::vec2 C, physicsObject *PO1, physics
     return result;
 }
 
+// utility function for finding intersect point between 2 lines
+glm::vec2 FindIntersectionPoint(glm::vec2 point1, glm::vec2 point2, glm::vec2 ref1, glm::vec2 ref2){
+    float x = ((point1.x*point2.y)-(point1.y*point2.x))*(ref1.x-ref2.x) - (point1.x-point2.x)*((ref1.x*ref2.y)-(ref1.y*ref2.x));
+    x /= ((point1.x-point2.x)*(ref1.y-ref2.y) - (point1.y-point2.y)*(ref1.x-ref2.x));
+
+    float y = ((point1.x*point2.y)-(point1.y*point2.x))*(ref1.y-ref2.y) - (point1.y-point2.y)*((ref1.x*ref2.y)-(ref1.y*ref2.x));
+    y /= ((point1.x-point2.x)*(ref1.y-ref2.y) - (point1.y-point2.y)*(ref1.x-ref2.x));
+
+    return glm::vec2(x, y);
+}
 // clipping algorythm for utility, returns a point
 // uses clockwise handedness for ref line
 glm::vec2 Clip(glm::vec2 point1, glm::vec2 point2, glm::vec2 ref1, glm::vec2 ref2){
@@ -286,6 +299,8 @@ glm::vec2 Clip(glm::vec2 point1, glm::vec2 point2, glm::vec2 ref1, glm::vec2 ref
 // takes clockwise handedness, be careful!
 std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *PO2, glm::vec2 normal){
     // 1. first find best points
+    TranslatePO(PO1);
+    TranslatePO(PO2);
 
     // get the largest dot product of first collider
     float temp = 0;
@@ -301,6 +316,7 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
             index1 = i;
         }
     }
+    debug = {};
 
     // now second collider
     temp = 0;
@@ -314,23 +330,23 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
             index2 = i;
         }
     }
+    debug.push_back(PO2->base[0]);
+    debug.push_back(PO2->base[1]);
+    debug.push_back(PO2->base[2]);
     
     // 2. then best faces: flip x and y, negate x and thats the normal <- could break
-    //TODO: fix this shi!!!
 
     // face from PO1
     bool plus1 = true;
     int index = index1 - 1;
     if(index < 0) index += PO1->collider.size();
     glm::vec2 face1A, face1B; // B is clockwise to A
-    std::cout << "got this far.. " << index << " " << index1;
     face1A = PO1->collider[index];
-    std::cout << " what abt this?" << std::endl;
     face1B = PO1->collider[index1];
     biggest = glm::dot(glm::vec2(-(face1B.y - face1A.y), face1B.x - face1A.x), normal);
 
     index = index1 + 1;
-    if(index > PO1->collider.size()) index = 0;
+    if(index > PO1->collider.size() - 1) index = 0;
     face1A = PO1->collider[index1];
     face1B = PO1->collider[index];
 
@@ -352,7 +368,7 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
     biggest = glm::dot(glm::vec2(-(face2B.y - face2A.y), face2B.x - face2A.x), -normal);
 
     index = index2 + 1;
-    if(index > (PO2->collider.size())) index = 0;
+    if(index > PO2->collider.size() - 1) index = 0;
     face2A = PO2->collider[index2];
     face2B = PO2->collider[index];
 
@@ -363,11 +379,9 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
         face2B = PO2->collider[index2];
         plus2 = false;
     }
-
     // 3. then sort faces, also getting adjacent ref faces for clipping
     glm::vec2 incA, incB, refA, refB, ref0, ref2; // again, B is clockwise to A; 0 and 2 are used for clipping
     if(glm::dot(glm::vec2(-(face1B.y - face1A.y), face1B.x - face1A.x), normal) > glm::dot(glm::vec2(-(face2B.y - face2A.y), face2B.x - face2A.x), -normal)){
-        normal /= 2.0f;
         refA = face1A;
         refB = face1B;
         incA = face2A;
@@ -395,7 +409,6 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
         }
     }
     else{
-        normal /= -2.0f;
         refA = face2A;
         refB = face2B;
         incA = face1A;
@@ -425,16 +438,63 @@ std::vector<glm::vec2> FindCollisionManifold(physicsObject *PO1, physicsObject *
 
     // 4. then clip!
 
-    // only need 3 function calls
+    // only need 3 cliping tings
     std::vector<glm::vec2> list = {glm::vec2(0)};
-    // to da anticlockwise
-    list.push_back(Clip(incA, incB, ref0, refA) + normal);
-    // to da clockwise
-    list.push_back(Clip(incA, incB, refB, ref2) + normal);
-    // final ref face, itself!
-    list.push_back(Clip(incA, incB, refA, refB) + normal);
+    bool insideA, insideB;
 
-    // need to offset points to find true intersection point
+    // to da anticlockwise
+
+    // first find if points inside or not
+    if((refA.x-ref0.x)*(incA.y-ref0.y) - (refA.y-ref0.y)*(incA.x-ref0.x) > 0) insideA = false;
+    else insideA = true;
+
+    if((refA.x-ref0.x)*(incB.y-ref0.y) - (refA.y-ref0.y)*(incB.x-ref0.x) > 0) insideB = false;
+    else insideB = true;
+
+    // one inside, one outside, find intersection
+    if(insideA && !insideB){
+        incB = FindIntersectionPoint(incA, incB, ref0, refA);
+    }
+    if(!insideA && insideB){
+        incA = FindIntersectionPoint(incA, incB, ref0, refA);
+    }
+
+    // to da clockwise
+
+    // first find if points inside or not
+    if((ref2.x-refB.x)*(incA.y-refB.y) - (ref2.y-refB.y)*(incA.x-refB.x) > 0) insideA = false;
+    else insideA = true;
+
+    if((ref2.x-refB.x)*(incB.y-refB.y) - (ref2.y-refB.y)*(incB.x-refB.x) > 0) insideB = false;
+    else insideB = true;
+
+    // one inside, one outside, find intersection
+    if(insideA && !insideB){
+        incB = FindIntersectionPoint(incA, incB, refB, ref2);
+    }
+    if(!insideA && insideB){
+        incA = FindIntersectionPoint(incA, incB, refB, ref2);
+    }
+
+    // final ref face, itself!
+
+    // first find if points inside or not
+    if((refB.x-refA.x)*(incA.y-refA.y) - (refB.y-refA.y)*(incA.x-refA.x) > 0) insideA = false;
+    else insideA = true;
+
+    if((refB.x-refA.x)*(incB.y-refA.y) - (refB.y-refA.y)*(incB.x-refA.x) > 0) insideB = false;
+    else insideB = true;
+
+    // one inside, one outside, leave outside one behind
+    if(insideA && !insideB){
+        incB = glm::vec2(0);
+    }
+    if(!insideA && insideB){
+        incA = glm::vec2(0);
+    }
+
+    list.push_back(incA);
+    list.push_back(incB);
 
     return list; // ggez?
 }
